@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 /**
  * Mistral AI provider — OpenAI-compatible API
+ * Supports completion and embeddings (mistral-embed, 1024d, no native truncation).
  */
 class Maho_Ai_Model_Platform_Mistral extends Maho_Ai_Model_Platform_OpenAi
 {
@@ -24,5 +25,11 @@ class Maho_Ai_Model_Platform_Mistral extends Maho_Ai_Model_Platform_OpenAi
             baseUrl: 'https://api.mistral.ai/v1',
         );
         $this->platformCode = Maho_Ai_Model_Platform::MISTRAL;
+    }
+
+    #[\Override]
+    protected function resolveEmbedModel(): string
+    {
+        return (string) Mage::getStoreConfig('maho_ai/embed/mistral_model') ?: 'mistral-embed';
     }
 }

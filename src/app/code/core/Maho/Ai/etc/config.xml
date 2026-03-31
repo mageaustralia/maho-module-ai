@@ -2,7 +2,7 @@
 <config>
     <modules>
         <Maho_Ai>
-            <version>1.0.0</version>
+            <version>1.1.0</version>
         </Maho_Ai>
     </modules>
 
@@ -21,6 +21,9 @@
                     <usage>
                         <table>maho_ai_usage</table>
                     </usage>
+                    <vector>
+                        <table>maho_ai_vector</table>
+                    </vector>
                 </entities>
             </ai_resource>
         </models>
@@ -51,9 +54,28 @@
                 <!-- Consumer modules register here in their config.xml -->
             </consumers>
         </ai>
+
+        <events>
+            <catalog_product_save_after>
+                <observers>
+                    <maho_ai_product_embed>
+                        <type>singleton</type>
+                        <class>ai/observer</class>
+                        <method>onProductSave</method>
+                    </maho_ai_product_embed>
+                </observers>
+            </catalog_product_save_after>
+            <catalog_category_save_after>
+                <observers>
+                    <maho_ai_category_embed>
+                        <type>singleton</type>
+                        <class>ai/observer</class>
+                        <method>onCategorySave</method>
+                    </maho_ai_category_embed>
+                </observers>
+            </catalog_category_save_after>
+        </events>
     </global>
-
-
 
     <admin>
         <routers>
@@ -129,6 +151,27 @@
                 <blocked_patterns></blocked_patterns>
                 <pii_detection>0</pii_detection>
             </safety>
+            <embed>
+                <enabled>0</enabled>
+                <default_platform>openai</default_platform>
+                <target_dimensions>512</target_dimensions>
+                <auto_embed_products>0</auto_embed_products>
+                <auto_embed_categories>0</auto_embed_categories>
+                <openai_model>text-embedding-3-small</openai_model>
+                <google_model>text-embedding-004</google_model>
+                <mistral_model>mistral-embed</mistral_model>
+                <ollama_model>nomic-embed-text</ollama_model>
+            </embed>
+            <image>
+                <enabled>0</enabled>
+                <default_platform>openai</default_platform>
+                <fallback_placeholder>1</fallback_placeholder>
+                <placeholder_url>https://placehold.co/{w}x{h}</placeholder_url>
+                <placeholder_width>800</placeholder_width>
+                <placeholder_height>600</placeholder_height>
+                <openai_model>dall-e-3</openai_model>
+                <google_model>imagen-3.0-generate-001</google_model>
+            </image>
         </maho_ai>
     </default>
 </config>

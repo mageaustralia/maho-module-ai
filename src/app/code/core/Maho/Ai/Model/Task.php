@@ -22,6 +22,10 @@ class Maho_Ai_Model_Task extends Mage_Core_Model_Abstract
     public const PRIORITY_INTERACTIVE = 'interactive';
     public const PRIORITY_BACKGROUND  = 'background';
 
+    public const TYPE_COMPLETION = 'completion';
+    public const TYPE_EMBEDDING  = 'embedding';
+    public const TYPE_IMAGE      = 'image';
+
     #[\Override]
     protected function _construct(): void
     {

@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 /**
  * Generic OpenAI-compatible provider for custom endpoints
+ * Uses the same base URL for completion, embeddings, and image generation.
  */
 class Maho_Ai_Model_Platform_Generic extends Maho_Ai_Model_Platform_OpenAi
 {
@@ -24,5 +25,22 @@ class Maho_Ai_Model_Platform_Generic extends Maho_Ai_Model_Platform_OpenAi
             baseUrl: $baseUrl,
         );
         $this->platformCode = Maho_Ai_Model_Platform::GENERIC;
+    }
+
+    #[\Override]
+    protected function resolveEmbedModel(): string
+    {
+        return (string) Mage::getStoreConfig('maho_ai/embed/generic_model') ?: $this->resolveModel();
+    }
+
+    #[\Override]
+    protected function resolveImageModel(): string
+    {
+        return (string) Mage::getStoreConfig('maho_ai/image/generic_model') ?: $this->resolveModel();
+    }
+
+    private function resolveModel(): string
+    {
+        return (string) Mage::getStoreConfig('maho_ai/general/generic_model');
     }
 }

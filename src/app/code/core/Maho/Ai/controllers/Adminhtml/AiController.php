@@ -48,7 +48,9 @@ class Maho_Ai_Adminhtml_AiController extends Mage_Adminhtml_Controller_Action
 
     /**
      * AJAX: fetch available models for a provider and cache in config.
-     * The admin secret key in the URL provides CSRF protection.
+     * Listed in $_publicActions to skip URL secret key (incompatible with AJAX).
+     * CSRF is mitigated by ACL (admin session required) and browser same-origin policy.
+     * Provider is implicitly whitelisted by fetchForProvider()'s match() statement.
      */
     public function fetchModelsAction(): void
     {

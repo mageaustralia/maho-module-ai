@@ -40,6 +40,56 @@ class Maho_Ai_Model_Platform_Factory
             ?: Maho_Ai_Model_Platform::OPENAI;
     }
 
+    /**
+     * Create a provider instance that implements EmbedProviderInterface.
+     *
+     * @throws Mage_Core_Exception if platform is not configured, unknown, or does not support embeddings
+     */
+    public function createEmbed(?string $platformCode = null, ?int $storeId = null): Maho_Ai_Model_Platform_EmbedProviderInterface
+    {
+        $platformCode ??= (string) Mage::getStoreConfig('maho_ai/embed/default_platform', $storeId)
+            ?: Maho_Ai_Model_Platform::OPENAI;
+
+        $provider = match ($platformCode) {
+            Maho_Ai_Model_Platform::OPENAI   => $this->createOpenAi($storeId),
+            Maho_Ai_Model_Platform::GOOGLE   => $this->createGoogle($storeId),
+            Maho_Ai_Model_Platform::MISTRAL  => $this->createMistralForEmbed($storeId),
+            Maho_Ai_Model_Platform::OLLAMA   => $this->createOllamaForEmbed($storeId),
+            Maho_Ai_Model_Platform::GENERIC  => $this->createGenericForEmbed($storeId),
+            default => throw new Mage_Core_Exception("Platform '{$platformCode}' does not support embeddings."),
+        };
+
+        if (!($provider instanceof Maho_Ai_Model_Platform_EmbedProviderInterface)) {
+            throw new Mage_Core_Exception("Platform '{$platformCode}' does not implement EmbedProviderInterface.");
+        }
+
+        return $provider;
+    }
+
+    /**
+     * Create a provider instance that implements ImageProviderInterface.
+     *
+     * @throws Mage_Core_Exception if platform is not configured, unknown, or does not support image generation
+     */
+    public function createImage(?string $platformCode = null, ?int $storeId = null): Maho_Ai_Model_Platform_ImageProviderInterface
+    {
+        $platformCode ??= (string) Mage::getStoreConfig('maho_ai/image/default_platform', $storeId)
+            ?: Maho_Ai_Model_Platform::OPENAI;
+
+        $provider = match ($platformCode) {
+            Maho_Ai_Model_Platform::OPENAI  => $this->createOpenAi($storeId),
+            Maho_Ai_Model_Platform::GOOGLE  => $this->createGoogle($storeId),
+            Maho_Ai_Model_Platform::GENERIC => $this->createGenericForImage($storeId),
+            default => throw new Mage_Core_Exception("Platform '{$platformCode}' does not support image generation."),
+        };
+
+        if (!($provider instanceof Maho_Ai_Model_Platform_ImageProviderInterface)) {
+            throw new Mage_Core_Exception("Platform '{$platformCode}' does not implement ImageProviderInterface.");
+        }
+
+        return $provider;
+    }
+
     private function getConfig(string $path, ?int $storeId = null): string
     {
         return (string) Mage::getStoreConfig($path, $storeId);
@@ -138,6 +188,67 @@ class Maho_Ai_Model_Platform_Factory
             baseUrl: $baseUrl,
             apiKey: $this->getEncryptedConfig('maho_ai/general/generic_api_key', $storeId),
             defaultModel: $this->resolveModel(Maho_Ai_Model_Platform::GENERIC, $storeId),
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // Embed-specific creators (use embed config group for base URL / API key)
+    // -------------------------------------------------------------------------
+
+    private function createMistralForEmbed(?int $storeId): Maho_Ai_Model_Platform_Mistral
+    {
+        $apiKey = $this->getEncryptedConfig('maho_ai/general/mistral_api_key', $storeId);
+        if (!$apiKey) {
+            throw new Mage_Core_Exception('Mistral API key is not configured.');
+        }
+        return new Maho_Ai_Model_Platform_Mistral(
+            apiKey: $apiKey,
+            defaultModel: $this->getConfig('maho_ai/embed/mistral_model', $storeId) ?: 'mistral-embed',
+        );
+    }
+
+    private function createOllamaForEmbed(?int $storeId): Maho_Ai_Model_Platform_Ollama
+    {
+        $baseUrl = $this->getConfig('maho_ai/general/ollama_base_url', $storeId) ?: 'http://localhost:11434';
+        return new Maho_Ai_Model_Platform_Ollama(
+            baseUrl: $baseUrl,
+            defaultModel: $this->getConfig('maho_ai/embed/ollama_model', $storeId) ?: 'nomic-embed-text',
+        );
+    }
+
+    private function createGenericForEmbed(?int $storeId): Maho_Ai_Model_Platform_Generic
+    {
+        $baseUrl = $this->getConfig('maho_ai/embed/generic_base_url', $storeId)
+            ?: $this->getConfig('maho_ai/general/generic_base_url', $storeId);
+        if (!$baseUrl) {
+            throw new Mage_Core_Exception('Generic embed provider base URL is not configured.');
+        }
+        $apiKey = $this->getEncryptedConfig('maho_ai/embed/generic_api_key', $storeId)
+            ?: $this->getEncryptedConfig('maho_ai/general/generic_api_key', $storeId);
+        return new Maho_Ai_Model_Platform_Generic(
+            baseUrl: $baseUrl,
+            apiKey: $apiKey,
+            defaultModel: $this->getConfig('maho_ai/embed/generic_model', $storeId),
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // Image-specific creators (use image config group for base URL / API key)
+    // -------------------------------------------------------------------------
+
+    private function createGenericForImage(?int $storeId): Maho_Ai_Model_Platform_Generic
+    {
+        $baseUrl = $this->getConfig('maho_ai/image/generic_base_url', $storeId)
+            ?: $this->getConfig('maho_ai/general/generic_base_url', $storeId);
+        if (!$baseUrl) {
+            throw new Mage_Core_Exception('Generic image provider base URL is not configured.');
+        }
+        $apiKey = $this->getEncryptedConfig('maho_ai/image/generic_api_key', $storeId)
+            ?: $this->getEncryptedConfig('maho_ai/general/generic_api_key', $storeId);
+        return new Maho_Ai_Model_Platform_Generic(
+            baseUrl: $baseUrl,
+            apiKey: $apiKey,
+            defaultModel: $this->getConfig('maho_ai/image/generic_model', $storeId),
         );
     }
 }

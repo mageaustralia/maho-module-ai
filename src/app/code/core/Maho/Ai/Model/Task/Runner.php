@@ -104,41 +104,14 @@ class Maho_Ai_Model_Task_Runner
         $task->markProcessing()->save();
 
         try {
-            $messages = $task->getMessagesArray();
+            $taskType = $task->getData('task_type') ?: Maho_Ai_Model_Task::TYPE_COMPLETION;
 
-            // Prepend system prompt if present
-            if ($task->getData('system_prompt')) {
-                array_unshift($messages, ['role' => 'system', 'content' => $task->getData('system_prompt')]);
-            }
-
-            $options = array_filter([
-                'model' => $task->getData('model'),
-            ]);
-
-            $provider = Mage::getSingleton('ai/platform_factory')->create(
-                $task->getData('platform') ?: null,
-                $task->getData('store_id') ?: null,
-            );
-
-            $response = $provider->complete($messages, $options);
-
-            // Sanitize output
-            $metadata = [];
-            $response = Mage::getSingleton('ai/safety_outputSanitizer')->sanitize($response, false, $metadata);
-
-            $usage = $provider->getLastTokenUsage();
-
-            $task->markComplete(
-                response: $response,
-                inputTokens: $usage['input'],
-                outputTokens: $usage['output'],
-                platform: $provider->getPlatformCode(),
-                model: $provider->getLastModel(),
-            )->save();
-
-            // Fire callback if registered
-            $this->fireCallback($task, $response);
-
+            match ($taskType) {
+                Maho_Ai_Model_Task::TYPE_COMPLETION => $this->executeCompletionTask($task),
+                Maho_Ai_Model_Task::TYPE_EMBEDDING  => $this->executeEmbedTask($task),
+                Maho_Ai_Model_Task::TYPE_IMAGE      => $this->executeImageTask($task),
+                default => throw new Mage_Core_Exception("Unknown task type: {$taskType}"),
+            };
         } catch (Throwable $e) {
             $task->markFailed($e->getMessage())->save();
             Mage::log(
@@ -147,6 +120,126 @@ class Maho_Ai_Model_Task_Runner
                 'maho_ai.log',
             );
         }
+    }
+
+    private function executeCompletionTask(Maho_Ai_Model_Task $task): void
+    {
+        $messages = $task->getMessagesArray();
+
+        if ($task->getData('system_prompt')) {
+            array_unshift($messages, ['role' => 'system', 'content' => $task->getData('system_prompt')]);
+        }
+
+        $options = array_filter(['model' => $task->getData('model')]);
+
+        $provider = Mage::getSingleton('ai/platform_factory')->create(
+            $task->getData('platform') ?: null,
+            $task->getData('store_id') ?: null,
+        );
+
+        $response = $provider->complete($messages, $options);
+
+        $metadata = [];
+        $response = Mage::getSingleton('ai/safety_outputSanitizer')->sanitize($response, false, $metadata);
+
+        $usage = $provider->getLastTokenUsage();
+
+        $task->markComplete(
+            response: $response,
+            inputTokens: $usage['input'],
+            outputTokens: $usage['output'],
+            platform: $provider->getPlatformCode(),
+            model: $provider->getLastModel(),
+        )->save();
+
+        $this->fireCallback($task, $response);
+    }
+
+    private function executeEmbedTask(Maho_Ai_Model_Task $task): void
+    {
+        $messages = $task->getMessagesArray();
+        $text     = $messages[0]['content'] ?? '';
+
+        $storeId = $task->getData('store_id') ?: null;
+        $options = array_filter(['model' => $task->getData('model')]);
+
+        $targetDims = (int) Mage::getStoreConfig('maho_ai/embed/target_dimensions', $storeId);
+        if ($targetDims > 0) {
+            $options['dimensions'] = $targetDims;
+        }
+
+        /** @var Maho_Ai_Model_Platform_Factory $factory */
+        $factory  = Mage::getSingleton('ai/platform_factory');
+        $provider = $factory->createEmbed(
+            $task->getData('platform') ?: null,
+            $storeId,
+        );
+
+        $vectors = $provider->embed($text, $options);
+        $vector  = $vectors[0] ?? [];
+
+        // Auto-save to maho_ai_vector if entity info provided
+        $context = $task->getContextArray();
+        if (!empty($context['entity_type']) && !empty($context['entity_id'])) {
+            /** @var Maho_Ai_Model_Resource_Vector $vectorResource */
+            $vectorResource = Mage::getResourceSingleton('ai/vector');
+            $vectorResource->saveForEntity(
+                entityType: $context['entity_type'],
+                entityId: (int) $context['entity_id'],
+                storeId: (int) ($task->getData('store_id') ?? 0),
+                vector: $vector,
+                dimensions: count($vector),
+                platform: $provider->getEmbedPlatformCode(),
+                model: $provider->getLastEmbedModel(),
+            );
+        }
+
+        $usage    = $provider->getLastEmbedTokenUsage();
+        $response = json_encode($vector);
+
+        $task->markComplete(
+            response: $response,
+            inputTokens: $usage['input'],
+            outputTokens: 0,
+            platform: $provider->getEmbedPlatformCode(),
+            model: $provider->getLastEmbedModel(),
+        )->save();
+
+        $this->fireCallback($task, $response);
+    }
+
+    private function executeImageTask(Maho_Ai_Model_Task $task): void
+    {
+        $messages = $task->getMessagesArray();
+        $prompt   = $messages[0]['content'] ?? '';
+
+        $context = $task->getContextArray();
+        $options = array_filter([
+            'model'   => $task->getData('model'),
+            'width'   => $context['width'] ?? null,
+            'height'  => $context['height'] ?? null,
+            'quality' => $context['quality'] ?? null,
+            'style'   => $context['style'] ?? null,
+        ]);
+
+        /** @var Maho_Ai_Model_Platform_Factory $factory */
+        $factory  = Mage::getSingleton('ai/platform_factory');
+        $provider = $factory->createImage(
+            $task->getData('platform') ?: null,
+            $task->getData('store_id') ?: null,
+        );
+
+        $response = $provider->generateImage($prompt, $options);
+
+        $task->markComplete(
+            response: $response,
+            inputTokens: 0,
+            outputTokens: 0,
+            platform: $provider->getImagePlatformCode(),
+            model: $provider->getLastImageModel(),
+        )->save();
+
+        $this->fireCallback($task, $response);
     }
 
     private function fireCallback(Maho_Ai_Model_Task $task, string $response): void

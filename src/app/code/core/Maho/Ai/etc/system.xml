@@ -377,6 +377,264 @@
                         </pii_detection>
                     </fields>
                 </safety>
+
+                <embed translate="label">
+                    <label>Embeddings</label>
+                    <sort_order>50</sort_order>
+                    <show_in_default>1</show_in_default>
+                    <show_in_website>0</show_in_website>
+                    <show_in_store>0</show_in_store>
+                    <fields>
+                        <enabled translate="label">
+                            <label>Enable Embeddings</label>
+                            <frontend_type>boolean</frontend_type>
+                            <sort_order>10</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </enabled>
+                        <default_platform translate="label">
+                            <label>Embed Provider</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>ai/source_embedPlatform</source_model>
+                            <sort_order>20</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><enabled>1</enabled></depends>
+                        </default_platform>
+                        <target_dimensions translate="label comment">
+                            <label>Target Dimensions</label>
+                            <comment>Vector size. 0 = model default. OpenAI and Google support native truncation; others are truncated after retrieval.</comment>
+                            <frontend_type>text</frontend_type>
+                            <validate>validate-number</validate>
+                            <sort_order>30</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><enabled>1</enabled></depends>
+                        </target_dimensions>
+                        <auto_embed_products translate="label comment">
+                            <label>Auto-embed Products</label>
+                            <comment>Queue an embedding task whenever a product is saved.</comment>
+                            <frontend_type>boolean</frontend_type>
+                            <sort_order>40</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><enabled>1</enabled></depends>
+                        </auto_embed_products>
+                        <auto_embed_categories translate="label comment">
+                            <label>Auto-embed Categories</label>
+                            <comment>Queue an embedding task whenever a category is saved.</comment>
+                            <frontend_type>boolean</frontend_type>
+                            <sort_order>50</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><enabled>1</enabled></depends>
+                        </auto_embed_categories>
+
+                        <!-- OpenAI embed -->
+                        <openai_model translate="label">
+                            <label>OpenAI Embed Model</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>ai/source_models_openaiEmbed</source_model>
+                            <sort_order>100</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><default_platform>openai</default_platform></depends>
+                        </openai_model>
+
+                        <!-- Google embed -->
+                        <google_model translate="label">
+                            <label>Google Embed Model</label>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>200</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><default_platform>google</default_platform></depends>
+                        </google_model>
+
+                        <!-- Mistral embed -->
+                        <mistral_model translate="label">
+                            <label>Mistral Embed Model</label>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>300</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><default_platform>mistral</default_platform></depends>
+                        </mistral_model>
+
+                        <!-- Ollama embed -->
+                        <ollama_model translate="label comment">
+                            <label>Ollama Embed Model</label>
+                            <comment>Must be installed locally via `ollama pull`.</comment>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>400</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><default_platform>ollama</default_platform></depends>
+                        </ollama_model>
+
+                        <!-- Generic embed -->
+                        <generic_base_url translate="label comment">
+                            <label>Base URL</label>
+                            <comment>OpenAI-compatible embeddings endpoint, e.g. https://api.example.com/v1</comment>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>500</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><default_platform>generic</default_platform></depends>
+                        </generic_base_url>
+                        <generic_api_key translate="label">
+                            <label>API Key</label>
+                            <frontend_type>obscure</frontend_type>
+                            <backend_model>adminhtml/system_config_backend_encrypted</backend_model>
+                            <sort_order>510</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><default_platform>generic</default_platform></depends>
+                        </generic_api_key>
+                        <generic_model translate="label">
+                            <label>Model</label>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>520</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><default_platform>generic</default_platform></depends>
+                        </generic_model>
+                    </fields>
+                </embed>
+
+                <image translate="label">
+                    <label>Image Generation</label>
+                    <sort_order>60</sort_order>
+                    <show_in_default>1</show_in_default>
+                    <show_in_website>0</show_in_website>
+                    <show_in_store>0</show_in_store>
+                    <fields>
+                        <enabled translate="label">
+                            <label>Enable Image Generation</label>
+                            <frontend_type>boolean</frontend_type>
+                            <sort_order>10</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </enabled>
+                        <default_platform translate="label">
+                            <label>Image Provider</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>ai/source_imagePlatform</source_model>
+                            <sort_order>20</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><enabled>1</enabled></depends>
+                        </default_platform>
+                        <fallback_placeholder translate="label comment">
+                            <label>Use Placeholder Fallback</label>
+                            <comment>Return a placeholder image URL when image generation is disabled or fails.</comment>
+                            <frontend_type>boolean</frontend_type>
+                            <sort_order>30</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </fallback_placeholder>
+                        <placeholder_url translate="label comment">
+                            <label>Placeholder URL Pattern</label>
+                            <comment>Use {w} and {h} tokens for width/height. e.g. https://placehold.co/{w}x{h} or https://picsum.photos/{w}/{h}</comment>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>40</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><fallback_placeholder>1</fallback_placeholder></depends>
+                        </placeholder_url>
+                        <placeholder_width translate="label">
+                            <label>Default Placeholder Width</label>
+                            <frontend_type>text</frontend_type>
+                            <validate>validate-number validate-greater-than-zero</validate>
+                            <sort_order>50</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><fallback_placeholder>1</fallback_placeholder></depends>
+                        </placeholder_width>
+                        <placeholder_height translate="label">
+                            <label>Default Placeholder Height</label>
+                            <frontend_type>text</frontend_type>
+                            <validate>validate-number validate-greater-than-zero</validate>
+                            <sort_order>60</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><fallback_placeholder>1</fallback_placeholder></depends>
+                        </placeholder_height>
+
+                        <!-- OpenAI image — uses API key from General settings -->
+                        <openai_model translate="label">
+                            <label>OpenAI Image Model</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>ai/source_models_openaiImage</source_model>
+                            <sort_order>110</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><default_platform>openai</default_platform></depends>
+                        </openai_model>
+
+                        <!-- Google image — uses API key from General settings -->
+                        <google_model translate="label">
+                            <label>Google Image Model</label>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>210</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><default_platform>google</default_platform></depends>
+                        </google_model>
+
+                        <!-- Generic image -->
+                        <generic_base_url translate="label comment">
+                            <label>Base URL</label>
+                            <comment>OpenAI-compatible image generation endpoint, e.g. https://api.example.com/v1</comment>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>300</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><default_platform>generic</default_platform></depends>
+                        </generic_base_url>
+                        <generic_api_key translate="label">
+                            <label>API Key</label>
+                            <frontend_type>obscure</frontend_type>
+                            <backend_model>adminhtml/system_config_backend_encrypted</backend_model>
+                            <sort_order>310</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><default_platform>generic</default_platform></depends>
+                        </generic_api_key>
+                        <generic_model translate="label">
+                            <label>Model</label>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>320</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><default_platform>generic</default_platform></depends>
+                        </generic_model>
+                    </fields>
+                </image>
+
             </groups>
         </maho_ai>
     </sections>

@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 /**
  * Ollama provider — OpenAI-compatible local inference server
+ * Supports completion and embeddings via /v1/embeddings (Ollama ≥ 0.1.24).
  */
 class Maho_Ai_Model_Platform_Ollama extends Maho_Ai_Model_Platform_OpenAi
 {
@@ -24,5 +25,11 @@ class Maho_Ai_Model_Platform_Ollama extends Maho_Ai_Model_Platform_OpenAi
             baseUrl: rtrim($baseUrl, '/') . '/v1',
         );
         $this->platformCode = Maho_Ai_Model_Platform::OLLAMA;
+    }
+
+    #[\Override]
+    protected function resolveEmbedModel(): string
+    {
+        return (string) Mage::getStoreConfig('maho_ai/embed/ollama_model') ?: 'nomic-embed-text';
     }
 }
