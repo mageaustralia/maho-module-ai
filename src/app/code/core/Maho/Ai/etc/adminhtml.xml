@@ -1,0 +1,69 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Maho
+ *
+ * @category   Maho
+ * @package    Maho_Ai
+ * @copyright  Copyright (c) 2026 Maho (https://mahocommerce.com)
+ * @license    https://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ */
+-->
+<config>
+    <menu>
+        <system>
+            <children>
+                <maho_ai translate="title" module="ai">
+                    <title>Maho AI</title>
+                    <sort_order>90</sort_order>
+                    <action>adminhtml/ai/dashboard</action>
+                    <children>
+                        <dashboard translate="title" module="ai">
+                            <title>Dashboard</title>
+                            <sort_order>10</sort_order>
+                            <action>adminhtml/ai/dashboard</action>
+                        </dashboard>
+                        <tasks translate="title" module="ai">
+                            <title>Task History</title>
+                            <sort_order>20</sort_order>
+                            <action>adminhtml/ai/tasks</action>
+                        </tasks>
+                    </children>
+                </maho_ai>
+            </children>
+        </system>
+    </menu>
+    <acl>
+        <resources>
+            <admin>
+                <children>
+                    <system>
+                        <children>
+                            <maho_ai translate="title" module="ai">
+                                <title>Maho AI</title>
+                                <sort_order>90</sort_order>
+                                <children>
+                                    <dashboard translate="title" module="ai">
+                                        <title>Dashboard</title>
+                                        <sort_order>10</sort_order>
+                                    </dashboard>
+                                    <tasks translate="title" module="ai">
+                                        <title>Task History</title>
+                                        <sort_order>20</sort_order>
+                                    </tasks>
+                                </children>
+                            </maho_ai>
+                            <config>
+                                <children>
+                                    <maho_ai translate="title" module="ai">
+                                        <title>Maho AI Configuration</title>
+                                    </maho_ai>
+                                </children>
+                            </config>
+                        </children>
+                    </system>
+                </children>
+            </admin>
+        </resources>
+    </acl>
+</config>

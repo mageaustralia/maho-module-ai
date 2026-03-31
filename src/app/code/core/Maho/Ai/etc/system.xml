@@ -1,0 +1,383 @@
+<?xml version="1.0"?>
+<config>
+    <tabs>
+        <maho translate="label">
+            <label>Maho</label>
+            <sort_order>200</sort_order>
+        </maho>
+    </tabs>
+    <sections>
+        <maho_ai translate="label" module="ai">
+            <label>Maho AI</label>
+            <tab>maho</tab>
+            <sort_order>100</sort_order>
+            <show_in_default>1</show_in_default>
+            <show_in_website>0</show_in_website>
+            <show_in_store>0</show_in_store>
+            <groups>
+                <general translate="label">
+                    <label>General</label>
+                    <sort_order>10</sort_order>
+                    <show_in_default>1</show_in_default>
+                    <show_in_website>0</show_in_website>
+                    <show_in_store>0</show_in_store>
+                    <fields>
+                        <enabled translate="label">
+                            <label>Enable Maho AI</label>
+                            <frontend_type>boolean</frontend_type>
+                            <sort_order>10</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </enabled>
+                        <default_platform translate="label">
+                            <label>Default AI Provider</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>ai/source_platform</source_model>
+                            <sort_order>20</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </default_platform>
+                        <log_requests translate="label">
+                            <label>Log AI Requests</label>
+                            <frontend_type>boolean</frontend_type>
+                            <sort_order>30</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </log_requests>
+                        <log_level translate="label">
+                            <label>Log Level</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>ai/source_logLevel</source_model>
+                            <sort_order>40</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><log_requests>1</log_requests></depends>
+                        </log_level>
+
+                        <!-- OpenAI credentials (visible when openai is selected) -->
+                        <openai_api_key translate="label">
+                            <label>API Key</label>
+                            <frontend_type>obscure</frontend_type>
+                            <backend_model>adminhtml/system_config_backend_encrypted</backend_model>
+                            <sort_order>100</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><default_platform>openai</default_platform></depends>
+                        </openai_api_key>
+                        <openai_organization_id translate="label comment">
+                            <label>Organization ID</label>
+                            <comment>Optional. Found in your OpenAI account settings.</comment>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>110</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><default_platform>openai</default_platform></depends>
+                        </openai_organization_id>
+                        <openai_model translate="label">
+                            <label>Model</label>
+                            <frontend_type>select</frontend_type>
+                            <frontend_model>ai/adminhtml_system_config_form_field_modelSelect</frontend_model>
+                            <source_model>ai/source_models_openai</source_model>
+                            <sort_order>120</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><default_platform>openai</default_platform></depends>
+                        </openai_model>
+
+                        <!-- Anthropic credentials -->
+                        <anthropic_api_key translate="label">
+                            <label>API Key</label>
+                            <frontend_type>obscure</frontend_type>
+                            <backend_model>adminhtml/system_config_backend_encrypted</backend_model>
+                            <sort_order>200</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><default_platform>anthropic</default_platform></depends>
+                        </anthropic_api_key>
+                        <anthropic_model translate="label">
+                            <label>Model</label>
+                            <frontend_type>select</frontend_type>
+                            <frontend_model>ai/adminhtml_system_config_form_field_modelSelect</frontend_model>
+                            <source_model>ai/source_models_anthropic</source_model>
+                            <sort_order>210</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><default_platform>anthropic</default_platform></depends>
+                        </anthropic_model>
+
+                        <!-- Google credentials -->
+                        <google_api_key translate="label">
+                            <label>API Key</label>
+                            <frontend_type>obscure</frontend_type>
+                            <backend_model>adminhtml/system_config_backend_encrypted</backend_model>
+                            <sort_order>300</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><default_platform>google</default_platform></depends>
+                        </google_api_key>
+                        <google_model translate="label">
+                            <label>Model</label>
+                            <frontend_type>select</frontend_type>
+                            <frontend_model>ai/adminhtml_system_config_form_field_modelSelect</frontend_model>
+                            <source_model>ai/source_models_google</source_model>
+                            <sort_order>310</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><default_platform>google</default_platform></depends>
+                        </google_model>
+
+                        <!-- Mistral credentials -->
+                        <mistral_api_key translate="label">
+                            <label>API Key</label>
+                            <frontend_type>obscure</frontend_type>
+                            <backend_model>adminhtml/system_config_backend_encrypted</backend_model>
+                            <sort_order>400</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><default_platform>mistral</default_platform></depends>
+                        </mistral_api_key>
+                        <mistral_model translate="label">
+                            <label>Model</label>
+                            <frontend_type>select</frontend_type>
+                            <frontend_model>ai/adminhtml_system_config_form_field_modelSelect</frontend_model>
+                            <source_model>ai/source_models_mistral</source_model>
+                            <sort_order>410</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><default_platform>mistral</default_platform></depends>
+                        </mistral_model>
+
+                        <!-- OpenRouter credentials -->
+                        <openrouter_api_key translate="label">
+                            <label>API Key</label>
+                            <frontend_type>obscure</frontend_type>
+                            <backend_model>adminhtml/system_config_backend_encrypted</backend_model>
+                            <sort_order>500</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><default_platform>openrouter</default_platform></depends>
+                        </openrouter_api_key>
+                        <openrouter_model translate="label comment">
+                            <label>Model</label>
+                            <comment>e.g. openai/gpt-4o, anthropic/claude-sonnet-4-6, google/gemini-2.0-flash</comment>
+                            <frontend_type>text</frontend_type>
+                            <frontend_model>ai/adminhtml_system_config_form_field_modelSelect</frontend_model>
+                            <sort_order>510</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><default_platform>openrouter</default_platform></depends>
+                        </openrouter_model>
+
+                        <!-- Ollama credentials -->
+                        <ollama_base_url translate="label comment">
+                            <label>Base URL</label>
+                            <comment>Default: http://localhost:11434</comment>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>600</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><default_platform>ollama</default_platform></depends>
+                        </ollama_base_url>
+                        <ollama_model translate="label comment">
+                            <label>Model</label>
+                            <comment>Must be installed locally via `ollama pull`.</comment>
+                            <frontend_type>text</frontend_type>
+                            <frontend_model>ai/adminhtml_system_config_form_field_modelSelect</frontend_model>
+                            <sort_order>610</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><default_platform>ollama</default_platform></depends>
+                        </ollama_model>
+
+                        <!-- Generic OpenAI-compatible credentials -->
+                        <generic_base_url translate="label comment">
+                            <label>Base URL</label>
+                            <comment>OpenAI-compatible endpoint, e.g. https://api.example.com/v1</comment>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>700</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><default_platform>generic</default_platform></depends>
+                        </generic_base_url>
+                        <generic_api_key translate="label">
+                            <label>API Key</label>
+                            <frontend_type>obscure</frontend_type>
+                            <backend_model>adminhtml/system_config_backend_encrypted</backend_model>
+                            <sort_order>710</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><default_platform>generic</default_platform></depends>
+                        </generic_api_key>
+                        <generic_model translate="label">
+                            <label>Model</label>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>720</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                            <depends><default_platform>generic</default_platform></depends>
+                        </generic_model>
+                    </fields>
+                </general>
+
+                <queue translate="label">
+                    <label>Async Queue</label>
+                    <sort_order>20</sort_order>
+                    <show_in_default>1</show_in_default>
+                    <show_in_website>0</show_in_website>
+                    <show_in_store>0</show_in_store>
+                    <fields>
+                        <enabled translate="label">
+                            <label>Enable Async Queue</label>
+                            <frontend_type>boolean</frontend_type>
+                            <sort_order>10</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </enabled>
+                        <cron_schedule translate="label">
+                            <label>Queue Cron Schedule</label>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>20</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </cron_schedule>
+                        <max_tasks_per_run translate="label">
+                            <label>Max Tasks Per Cron Run</label>
+                            <frontend_type>text</frontend_type>
+                            <validate>validate-number validate-greater-than-zero</validate>
+                            <sort_order>30</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </max_tasks_per_run>
+                        <task_timeout translate="label comment">
+                            <label>Task Timeout (seconds)</label>
+                            <comment>Max seconds a task can run before being marked as failed.</comment>
+                            <frontend_type>text</frontend_type>
+                            <validate>validate-number</validate>
+                            <sort_order>40</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </task_timeout>
+                    </fields>
+                </queue>
+
+                <limits translate="label">
+                    <label>Rate Limits &amp; Budget</label>
+                    <sort_order>30</sort_order>
+                    <show_in_default>1</show_in_default>
+                    <show_in_website>0</show_in_website>
+                    <show_in_store>0</show_in_store>
+                    <fields>
+                        <daily_token_limit translate="label comment">
+                            <label>Daily Token Limit</label>
+                            <comment>0 = unlimited. Counts input + output tokens across all providers.</comment>
+                            <frontend_type>text</frontend_type>
+                            <validate>validate-number</validate>
+                            <sort_order>10</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </daily_token_limit>
+                        <monthly_cost_cap translate="label comment">
+                            <label>Monthly Cost Cap (USD)</label>
+                            <comment>0 = unlimited. Estimated cost based on known pricing.</comment>
+                            <frontend_type>text</frontend_type>
+                            <validate>validate-number</validate>
+                            <sort_order>20</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </monthly_cost_cap>
+                        <max_tokens_per_request translate="label">
+                            <label>Max Tokens Per Request</label>
+                            <frontend_type>text</frontend_type>
+                            <validate>validate-number validate-greater-than-zero</validate>
+                            <sort_order>30</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </max_tokens_per_request>
+                        <rate_limit_per_minute translate="label">
+                            <label>Rate Limit (requests/minute)</label>
+                            <frontend_type>text</frontend_type>
+                            <validate>validate-number validate-greater-than-zero</validate>
+                            <sort_order>40</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </rate_limit_per_minute>
+                    </fields>
+                </limits>
+
+                <safety translate="label">
+                    <label>Safety &amp; Guardrails</label>
+                    <sort_order>40</sort_order>
+                    <show_in_default>1</show_in_default>
+                    <show_in_website>0</show_in_website>
+                    <show_in_store>0</show_in_store>
+                    <fields>
+                        <injection_detection translate="label comment">
+                            <label>Prompt Injection Detection</label>
+                            <comment>Scan user inputs for prompt injection attempts before sending to AI.</comment>
+                            <frontend_type>boolean</frontend_type>
+                            <sort_order>10</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </injection_detection>
+                        <output_sanitize_html translate="label comment">
+                            <label>Sanitize HTML Output</label>
+                            <comment>Strip dangerous tags/attributes from AI responses used as HTML.</comment>
+                            <frontend_type>boolean</frontend_type>
+                            <sort_order>20</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </output_sanitize_html>
+                        <blocked_patterns translate="label comment">
+                            <label>Blocked Input Patterns</label>
+                            <comment>One regex per line. Matching inputs will be rejected.</comment>
+                            <frontend_type>textarea</frontend_type>
+                            <sort_order>30</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </blocked_patterns>
+                        <pii_detection translate="label comment">
+                            <label>PII Detection</label>
+                            <comment>Flag responses containing email addresses, phone numbers, or SSNs.</comment>
+                            <frontend_type>boolean</frontend_type>
+                            <sort_order>40</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>0</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </pii_detection>
+                    </fields>
+                </safety>
+            </groups>
+        </maho_ai>
+    </sections>
+</config>

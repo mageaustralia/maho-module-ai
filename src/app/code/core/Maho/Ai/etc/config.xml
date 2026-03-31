@@ -1,0 +1,134 @@
+<?xml version="1.0"?>
+<config>
+    <modules>
+        <Maho_Ai>
+            <version>1.0.0</version>
+        </Maho_Ai>
+    </modules>
+
+    <global>
+        <models>
+            <ai>
+                <class>Maho_Ai_Model</class>
+                <resourceModel>ai_resource</resourceModel>
+            </ai>
+            <ai_resource>
+                <class>Maho_Ai_Model_Resource</class>
+                <entities>
+                    <task>
+                        <table>maho_ai_task</table>
+                    </task>
+                    <usage>
+                        <table>maho_ai_usage</table>
+                    </usage>
+                </entities>
+            </ai_resource>
+        </models>
+
+        <helpers>
+            <ai>
+                <class>Maho_Ai_Helper</class>
+            </ai>
+        </helpers>
+
+        <blocks>
+            <ai>
+                <class>Maho_Ai_Block</class>
+            </ai>
+        </blocks>
+
+        <resources>
+            <maho_ai_setup>
+                <setup>
+                    <module>Maho_Ai</module>
+                    <class>Mage_Core_Model_Resource_Setup</class>
+                </setup>
+            </maho_ai_setup>
+        </resources>
+
+        <ai>
+            <consumers>
+                <!-- Consumer modules register here in their config.xml -->
+            </consumers>
+        </ai>
+    </global>
+
+
+
+    <admin>
+        <routers>
+            <adminhtml>
+                <args>
+                    <modules>
+                        <maho_ai before="Mage_Adminhtml">Maho_Ai_Adminhtml</maho_ai>
+                    </modules>
+                </args>
+            </adminhtml>
+        </routers>
+    </admin>
+
+    <crontab>
+        <jobs>
+            <maho_ai_process_queue>
+                <schedule>
+                    <config_path>maho_ai/queue/cron_schedule</config_path>
+                </schedule>
+                <run>
+                    <model>ai/task_runner::processQueue</model>
+                </run>
+            </maho_ai_process_queue>
+            <maho_ai_aggregate_usage>
+                <schedule>
+                    <cron_expr>5 0 * * *</cron_expr>
+                </schedule>
+                <run>
+                    <model>ai/task_runner::aggregateUsage</model>
+                </run>
+            </maho_ai_aggregate_usage>
+            <maho_ai_cleanup_old_tasks>
+                <schedule>
+                    <cron_expr>0 3 * * 0</cron_expr>
+                </schedule>
+                <run>
+                    <model>ai/task_runner::cleanupOldTasks</model>
+                </run>
+            </maho_ai_cleanup_old_tasks>
+        </jobs>
+    </crontab>
+
+    <default>
+        <maho_ai>
+            <general>
+                <enabled>1</enabled>
+                <default_platform>openai</default_platform>
+                <log_requests>0</log_requests>
+                <log_level>minimal</log_level>
+                <openai_model>gpt-4o</openai_model>
+                <anthropic_model>claude-sonnet-4-6</anthropic_model>
+                <google_model>gemini-2.0-flash</google_model>
+                <mistral_model>mistral-large-latest</mistral_model>
+                <openrouter_model>openai/gpt-4o</openrouter_model>
+                <ollama_base_url>http://localhost:11434</ollama_base_url>
+                <ollama_model>llama3.2</ollama_model>
+            </general>
+            <queue>
+                <enabled>0</enabled>
+                <cron_schedule>*/2 * * * *</cron_schedule>
+                <max_tasks_per_run>10</max_tasks_per_run>
+                <task_timeout>120</task_timeout>
+            </queue>
+            <limits>
+                <daily_token_limit>0</daily_token_limit>
+                <monthly_cost_cap>0</monthly_cost_cap>
+                <max_tokens_per_request>4096</max_tokens_per_request>
+                <rate_limit_per_minute>30</rate_limit_per_minute>
+            </limits>
+            <safety>
+                <injection_detection>1</injection_detection>
+                <output_sanitize_html>1</output_sanitize_html>
+                <blocked_patterns></blocked_patterns>
+                <pii_detection>0</pii_detection>
+            </safety>
+        </maho_ai>
+    </default>
+</config>

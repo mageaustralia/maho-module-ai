@@ -1,0 +1,184 @@
+<?php
+
+declare(strict_types=1);
+
+/**
+ * Maho
+ *
+ * @category   Maho
+ * @package    Maho_Ai
+ * @copyright  Copyright (c) 2025-2026 Maho (https://mahocommerce.com)
+ * @license    https://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ */
+
+/** @var Mage_Core_Model_Resource_Setup $this */
+$this->startSetup();
+
+$connection = $this->getConnection();
+
+// ============================================================================
+// maho_ai_task — async task queue
+// ============================================================================
+$table = $connection->newTable($this->getTable('ai/task'))
+    ->addColumn('task_id', Maho\Db\Ddl\Table::TYPE_INTEGER, null, [
+        'identity' => true,
+        'unsigned' => true,
+        'nullable' => false,
+        'primary'  => true,
+    ], 'Task ID')
+    ->addColumn('consumer', Maho\Db\Ddl\Table::TYPE_VARCHAR, 64, [
+        'nullable' => false,
+    ], 'Consumer module key (e.g. cms_content)')
+    ->addColumn('action', Maho\Db\Ddl\Table::TYPE_VARCHAR, 32, [
+        'nullable' => false,
+    ], 'Action (generate, edit, summarize, translate)')
+    ->addColumn('status', Maho\Db\Ddl\Table::TYPE_VARCHAR, 16, [
+        'nullable' => false,
+        'default'  => 'pending',
+    ], 'Status: pending, processing, complete, failed, cancelled')
+    ->addColumn('priority', Maho\Db\Ddl\Table::TYPE_VARCHAR, 16, [
+        'nullable' => false,
+        'default'  => 'background',
+    ], 'Priority: interactive or background')
+    ->addColumn('platform', Maho\Db\Ddl\Table::TYPE_VARCHAR, 32, [
+        'nullable' => true,
+    ], 'Provider used (resolved at execution)')
+    ->addColumn('model', Maho\Db\Ddl\Table::TYPE_VARCHAR, 128, [
+        'nullable' => true,
+    ], 'Model used')
+    ->addColumn('system_prompt', Maho\Db\Ddl\Table::TYPE_TEXT, null, [
+        'nullable' => true,
+    ], 'System instructions')
+    ->addColumn('messages', Maho\Db\Ddl\Table::TYPE_TEXT, null, [
+        'nullable' => true,
+    ], 'JSON: conversation history [{role, content}]')
+    ->addColumn('context', Maho\Db\Ddl\Table::TYPE_TEXT, null, [
+        'nullable' => true,
+    ], 'JSON: consumer-specific context (page_id, product_id, etc.)')
+    ->addColumn('response', Maho\Db\Ddl\Table::TYPE_TEXT, null, [
+        'nullable' => true,
+    ], 'LLM response text')
+    ->addColumn('callback_class', Maho\Db\Ddl\Table::TYPE_VARCHAR, 255, [
+        'nullable' => true,
+    ], 'PHP class for callback')
+    ->addColumn('callback_method', Maho\Db\Ddl\Table::TYPE_VARCHAR, 64, [
+        'nullable' => true,
+    ], 'Method to call with result')
+    ->addColumn('input_tokens', Maho\Db\Ddl\Table::TYPE_INTEGER, null, [
+        'unsigned' => true,
+        'nullable' => false,
+        'default'  => 0,
+    ], 'Input tokens used')
+    ->addColumn('output_tokens', Maho\Db\Ddl\Table::TYPE_INTEGER, null, [
+        'unsigned' => true,
+        'nullable' => false,
+        'default'  => 0,
+    ], 'Output tokens used')
+    ->addColumn('estimated_cost', Maho\Db\Ddl\Table::TYPE_DECIMAL, [10, 6], [
+        'nullable' => false,
+        'default'  => '0.000000',
+    ], 'Estimated cost in USD')
+    ->addColumn('error_message', Maho\Db\Ddl\Table::TYPE_TEXT, null, [
+        'nullable' => true,
+    ], 'Error message if failed')
+    ->addColumn('retries', Maho\Db\Ddl\Table::TYPE_SMALLINT, null, [
+        'unsigned' => true,
+        'nullable' => false,
+        'default'  => 0,
+    ], 'Retry count')
+    ->addColumn('max_retries', Maho\Db\Ddl\Table::TYPE_SMALLINT, null, [
+        'unsigned' => true,
+        'nullable' => false,
+        'default'  => 3,
+    ], 'Max retries before marking failed')
+    ->addColumn('admin_user_id', Maho\Db\Ddl\Table::TYPE_INTEGER, null, [
+        'unsigned' => true,
+        'nullable' => true,
+    ], 'Admin user who submitted (NULL = system/cron)')
+    ->addColumn('store_id', Maho\Db\Ddl\Table::TYPE_SMALLINT, null, [
+        'unsigned' => true,
+        'nullable' => false,
+        'default'  => 0,
+    ], 'Store ID')
+    ->addColumn('created_at', Maho\Db\Ddl\Table::TYPE_TIMESTAMP, null, [
+        'nullable' => false,
+        'default'  => Maho\Db\Ddl\Table::TIMESTAMP_INIT,
+    ], 'Created At')
+    ->addColumn('started_at', Maho\Db\Ddl\Table::TYPE_TIMESTAMP, null, [
+        'nullable' => true,
+    ], 'Processing Started At')
+    ->addColumn('completed_at', Maho\Db\Ddl\Table::TYPE_TIMESTAMP, null, [
+        'nullable' => true,
+    ], 'Completed At')
+    ->addIndex(
+        $this->getIdxName('ai/task', ['status', 'priority', 'created_at']),
+        ['status', 'priority', 'created_at'],
+    )
+    ->addIndex(
+        $this->getIdxName('ai/task', ['consumer', 'created_at']),
+        ['consumer', 'created_at'],
+    )
+    ->addIndex(
+        $this->getIdxName('ai/task', ['admin_user_id']),
+        ['admin_user_id'],
+    )
+    ->setComment('Maho AI Task Queue');
+
+$connection->createTable($table);
+
+// ============================================================================
+// maho_ai_usage — daily usage aggregation
+// ============================================================================
+$table = $connection->newTable($this->getTable('ai/usage'))
+    ->addColumn('usage_id', Maho\Db\Ddl\Table::TYPE_INTEGER, null, [
+        'identity' => true,
+        'unsigned' => true,
+        'nullable' => false,
+        'primary'  => true,
+    ], 'Usage ID')
+    ->addColumn('consumer', Maho\Db\Ddl\Table::TYPE_VARCHAR, 64, [
+        'nullable' => false,
+    ], 'Consumer module key')
+    ->addColumn('platform', Maho\Db\Ddl\Table::TYPE_VARCHAR, 32, [
+        'nullable' => false,
+    ], 'AI provider')
+    ->addColumn('model', Maho\Db\Ddl\Table::TYPE_VARCHAR, 128, [
+        'nullable' => false,
+    ], 'Model name')
+    ->addColumn('store_id', Maho\Db\Ddl\Table::TYPE_SMALLINT, null, [
+        'unsigned' => true,
+        'nullable' => false,
+        'default'  => 0,
+    ], 'Store ID')
+    ->addColumn('period_date', Maho\Db\Ddl\Table::TYPE_DATE, null, [
+        'nullable' => false,
+    ], 'Aggregation date')
+    ->addColumn('request_count', Maho\Db\Ddl\Table::TYPE_INTEGER, null, [
+        'unsigned' => true,
+        'nullable' => false,
+        'default'  => 0,
+    ], 'Number of requests')
+    ->addColumn('input_tokens', Maho\Db\Ddl\Table::TYPE_INTEGER, null, [
+        'unsigned' => true,
+        'nullable' => false,
+        'default'  => 0,
+    ], 'Total input tokens')
+    ->addColumn('output_tokens', Maho\Db\Ddl\Table::TYPE_INTEGER, null, [
+        'unsigned' => true,
+        'nullable' => false,
+        'default'  => 0,
+    ], 'Total output tokens')
+    ->addColumn('estimated_cost', Maho\Db\Ddl\Table::TYPE_DECIMAL, [10, 6], [
+        'nullable' => false,
+        'default'  => '0.000000',
+    ], 'Estimated cost in USD')
+    ->addIndex(
+        $this->getIdxName('ai/usage', ['consumer', 'platform', 'model', 'store_id', 'period_date'], Varien_Db_Adapter_Interface::INDEX_TYPE_UNIQUE),
+        ['consumer', 'platform', 'model', 'store_id', 'period_date'],
+        ['type' => Varien_Db_Adapter_Interface::INDEX_TYPE_UNIQUE],
+    )
+    ->setComment('Maho AI Daily Usage Aggregation');
+
+$connection->createTable($table);
+
+$this->endSetup();
