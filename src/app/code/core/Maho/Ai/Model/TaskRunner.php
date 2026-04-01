@@ -11,7 +11,7 @@ declare(strict_types=1);
  * @license    https://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
-class Maho_Ai_Model_Task_Runner
+class Maho_Ai_Model_TaskRunner
 {
     /**
      * Process pending tasks from the queue (cron entry point)
@@ -59,9 +59,9 @@ class Maho_Ai_Model_Task_Runner
         $yesterday = date('Y-m-d', strtotime('-1 day'));
 
         $connection->query("
-            INSERT INTO {$usageTable} 
+            INSERT INTO {$usageTable}
                 (consumer, platform, model, store_id, period_date, request_count, input_tokens, output_tokens, estimated_cost)
-            SELECT 
+            SELECT
                 consumer,
                 platform,
                 model,
@@ -274,7 +274,7 @@ class Maho_Ai_Model_Task_Runner
         // Re-queue timed-out tasks (they'll be retried up to max_retries)
         $connection->query("
             UPDATE {$taskTable}
-            SET 
+            SET
                 status = CASE WHEN retries >= max_retries THEN 'failed' ELSE 'pending' END,
                 retries = retries + 1,
                 error_message = 'Task timed out',

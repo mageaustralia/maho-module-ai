@@ -32,6 +32,10 @@ $table = $connection->newTable($this->getTable('ai/task'))
     ->addColumn('action', Maho\Db\Ddl\Table::TYPE_VARCHAR, 32, [
         'nullable' => false,
     ], 'Action (generate, edit, summarize, translate)')
+    ->addColumn('task_type', Maho\Db\Ddl\Table::TYPE_VARCHAR, 16, [
+        'nullable' => false,
+        'default'  => 'completion',
+    ], 'Task type: completion, embedding, image')
     ->addColumn('status', Maho\Db\Ddl\Table::TYPE_VARCHAR, 16, [
         'nullable' => false,
         'default'  => 'pending',
@@ -115,6 +119,10 @@ $table = $connection->newTable($this->getTable('ai/task'))
         ['status', 'priority', 'created_at'],
     )
     ->addIndex(
+        $this->getIdxName('ai/task', ['task_type']),
+        ['task_type'],
+    )
+    ->addIndex(
         $this->getIdxName('ai/task', ['consumer', 'created_at']),
         ['consumer', 'created_at'],
     )
@@ -178,6 +186,62 @@ $table = $connection->newTable($this->getTable('ai/usage'))
         ['type' => Varien_Db_Adapter_Interface::INDEX_TYPE_UNIQUE],
     )
     ->setComment('Maho AI Daily Usage Aggregation');
+
+$connection->createTable($table);
+
+// ============================================================================
+// maho_ai_vector — entity embedding vectors
+// ============================================================================
+$table = $connection->newTable($this->getTable('ai/vector'))
+    ->addColumn('vector_id', Maho\Db\Ddl\Table::TYPE_INTEGER, null, [
+        'identity' => true,
+        'unsigned' => true,
+        'nullable' => false,
+        'primary'  => true,
+    ], 'Vector ID')
+    ->addColumn('entity_type', Maho\Db\Ddl\Table::TYPE_VARCHAR, 32, [
+        'nullable' => false,
+    ], 'Entity type (product, category)')
+    ->addColumn('entity_id', Maho\Db\Ddl\Table::TYPE_INTEGER, null, [
+        'unsigned' => true,
+        'nullable' => false,
+    ], 'Entity ID')
+    ->addColumn('store_id', Maho\Db\Ddl\Table::TYPE_SMALLINT, null, [
+        'unsigned' => true,
+        'nullable' => false,
+        'default'  => 0,
+    ], 'Store ID')
+    ->addColumn('platform', Maho\Db\Ddl\Table::TYPE_VARCHAR, 32, [
+        'nullable' => true,
+    ], 'AI platform used to generate the vector')
+    ->addColumn('model', Maho\Db\Ddl\Table::TYPE_VARCHAR, 128, [
+        'nullable' => true,
+    ], 'Embedding model used')
+    ->addColumn('dimensions', Maho\Db\Ddl\Table::TYPE_INTEGER, null, [
+        'unsigned' => true,
+        'nullable' => true,
+    ], 'Number of dimensions in the vector')
+    ->addColumn('vector', Maho\Db\Ddl\Table::TYPE_TEXT, '16M', [
+        'nullable' => false,
+    ], 'JSON-encoded float array')
+    ->addColumn('created_at', Maho\Db\Ddl\Table::TYPE_TIMESTAMP, null, [
+        'nullable' => false,
+        'default'  => Maho\Db\Ddl\Table::TIMESTAMP_INIT,
+    ], 'Created At')
+    ->addColumn('updated_at', Maho\Db\Ddl\Table::TYPE_TIMESTAMP, null, [
+        'nullable' => false,
+        'default'  => Maho\Db\Ddl\Table::TIMESTAMP_INIT_UPDATE,
+    ], 'Updated At')
+    ->addIndex(
+        $this->getIdxName('ai/vector', ['entity_type', 'entity_id', 'store_id'], Varien_Db_Adapter_Interface::INDEX_TYPE_UNIQUE),
+        ['entity_type', 'entity_id', 'store_id'],
+        ['type' => Varien_Db_Adapter_Interface::INDEX_TYPE_UNIQUE],
+    )
+    ->addIndex(
+        $this->getIdxName('ai/vector', ['entity_type', 'entity_id']),
+        ['entity_type', 'entity_id'],
+    )
+    ->setComment('Maho AI — Entity Embedding Vectors');
 
 $connection->createTable($table);
 

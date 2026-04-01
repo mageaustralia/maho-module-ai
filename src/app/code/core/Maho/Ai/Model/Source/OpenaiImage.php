@@ -11,7 +11,7 @@ declare(strict_types=1);
  * @license    https://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
-class Maho_Ai_Model_Source_Models_OpenaiImage
+class Maho_Ai_Model_Source_OpenaiImage
 {
     public function toOptionArray(): array
     {

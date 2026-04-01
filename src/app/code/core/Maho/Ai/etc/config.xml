@@ -96,7 +96,7 @@
                     <config_path>maho_ai/queue/cron_schedule</config_path>
                 </schedule>
                 <run>
-                    <model>ai/task_runner::processQueue</model>
+                    <model>ai/taskRunner::processQueue</model>
                 </run>
             </maho_ai_process_queue>
             <maho_ai_aggregate_usage>
@@ -104,7 +104,7 @@
                     <cron_expr>5 0 * * *</cron_expr>
                 </schedule>
                 <run>
-                    <model>ai/task_runner::aggregateUsage</model>
+                    <model>ai/taskRunner::aggregateUsage</model>
                 </run>
             </maho_ai_aggregate_usage>
             <maho_ai_cleanup_old_tasks>
@@ -112,7 +112,7 @@
                     <cron_expr>0 3 * * 0</cron_expr>
                 </schedule>
                 <run>
-                    <model>ai/task_runner::cleanupOldTasks</model>
+                    <model>ai/taskRunner::cleanupOldTasks</model>
                 </run>
             </maho_ai_cleanup_old_tasks>
         </jobs>
