@@ -28,6 +28,11 @@
                             <sort_order>20</sort_order>
                             <action>adminhtml/ai/tasks</action>
                         </tasks>
+                        <reindex translate="title" module="ai">
+                            <title>Queue All Embeddings</title>
+                            <sort_order>30</sort_order>
+                            <action>adminhtml/ai/reindex</action>
+                        </reindex>
                     </children>
                 </maho_ai>
             </children>
@@ -51,6 +56,10 @@
                                         <title>Task History</title>
                                         <sort_order>20</sort_order>
                                     </tasks>
+                                    <reindex translate="title" module="ai">
+                                        <title>Queue All Embeddings</title>
+                                        <sort_order>30</sort_order>
+                                    </reindex>
                                 </children>
                             </maho_ai>
                             <config>

@@ -40,6 +40,14 @@
             </ai>
         </blocks>
 
+        <layout>
+            <updates>
+                <maho_ai>
+                    <file>maho_ai.xml</file>
+                </maho_ai>
+            </updates>
+        </layout>
+
         <resources>
             <maho_ai_setup>
                 <setup>
