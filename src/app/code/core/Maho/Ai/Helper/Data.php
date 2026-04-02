@@ -353,7 +353,7 @@ class Maho_Ai_Helper_Data extends Mage_Core_Helper_Abstract
             throw new Mage_Core_Exception('Maho AI image generation is disabled.');
         }
 
-        $w       = (int) ($options['width']  ?? Mage::getStoreConfig('maho_ai/image/placeholder_width', $storeId)  ?: 800);
+        $w       = (int) ($options['width']  ?? Mage::getStoreConfig('maho_ai/image/placeholder_width', $storeId) ?: 800);
         $h       = (int) ($options['height'] ?? Mage::getStoreConfig('maho_ai/image/placeholder_height', $storeId) ?: 600);
         $pattern = (string) Mage::getStoreConfig('maho_ai/image/placeholder_url', $storeId)
             ?: 'https://placehold.co/{w}x{h}';
