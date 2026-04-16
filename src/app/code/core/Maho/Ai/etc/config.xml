@@ -53,6 +53,63 @@
             <consumers>
                 <!-- Consumer modules register here in their config.xml -->
             </consumers>
+            <providers>
+                <openai>
+                    <label>OpenAI</label>
+                    <class>Maho_Ai_Model_Platform_OpenAi</class>
+                    <factory_method>createOpenAi</factory_method>
+                    <model_fetcher_method>fetchOpenAi</model_fetcher_method>
+                    <capabilities>chat,embed,image</capabilities>
+                    <sort_order>10</sort_order>
+                </openai>
+                <anthropic>
+                    <label>Anthropic (Claude)</label>
+                    <class>Maho_Ai_Model_Platform_Anthropic</class>
+                    <factory_method>createAnthropic</factory_method>
+                    <model_fetcher_method>fetchAnthropic</model_fetcher_method>
+                    <capabilities>chat</capabilities>
+                    <sort_order>20</sort_order>
+                </anthropic>
+                <google>
+                    <label>Google (Gemini)</label>
+                    <class>Maho_Ai_Model_Platform_Google</class>
+                    <factory_method>createGoogle</factory_method>
+                    <model_fetcher_method>fetchGoogle</model_fetcher_method>
+                    <capabilities>chat,embed,image</capabilities>
+                    <sort_order>30</sort_order>
+                </google>
+                <mistral>
+                    <label>Mistral AI</label>
+                    <class>Maho_Ai_Model_Platform_Mistral</class>
+                    <factory_method>createMistral</factory_method>
+                    <model_fetcher_method>fetchMistral</model_fetcher_method>
+                    <capabilities>chat,embed</capabilities>
+                    <sort_order>40</sort_order>
+                </mistral>
+                <openrouter>
+                    <label>OpenRouter</label>
+                    <class>Maho_Ai_Model_Platform_OpenRouter</class>
+                    <factory_method>createOpenRouter</factory_method>
+                    <model_fetcher_method>fetchOpenRouter</model_fetcher_method>
+                    <capabilities>chat,image</capabilities>
+                    <sort_order>50</sort_order>
+                </openrouter>
+                <ollama>
+                    <label>Ollama (Local)</label>
+                    <class>Maho_Ai_Model_Platform_Ollama</class>
+                    <factory_method>createOllama</factory_method>
+                    <model_fetcher_method>fetchOllama</model_fetcher_method>
+                    <capabilities>chat,embed</capabilities>
+                    <sort_order>60</sort_order>
+                </ollama>
+                <generic>
+                    <label>Generic (OpenAI-compatible)</label>
+                    <class>Maho_Ai_Model_Platform_Generic</class>
+                    <factory_method>createGeneric</factory_method>
+                    <capabilities>chat,embed,image</capabilities>
+                    <sort_order>70</sort_order>
+                </generic>
+            </providers>
         </ai>
 
         <events>
