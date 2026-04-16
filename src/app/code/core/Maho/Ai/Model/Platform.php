@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 class Maho_Ai_Model_Platform
 {
+    // Backward-compatible constants for built-in providers
     public const OPENAI     = 'openai';
     public const ANTHROPIC  = 'anthropic';
     public const GOOGLE     = 'google';
@@ -55,18 +56,63 @@ class Maho_Ai_Model_Platform
     }
 
     /**
-     * Get all supported platforms as code => label
+     * Get all registered providers as code => label, sorted by sort_order.
      */
     public static function getAll(): array
     {
-        return [
-            self::OPENAI     => 'OpenAI',
-            self::ANTHROPIC  => 'Anthropic (Claude)',
-            self::GOOGLE     => 'Google (Gemini)',
-            self::MISTRAL    => 'Mistral AI',
-            self::OPENROUTER => 'OpenRouter',
-            self::OLLAMA     => 'Ollama (Local)',
-            self::GENERIC    => 'Generic (OpenAI-compatible)',
-        ];
+        $providers = Mage::getConfig()->getNode('global/ai/providers');
+        if (!$providers) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($providers->children() as $code => $node) {
+            $result[$code] = [
+                'label'      => (string) $node->label,
+                'sort_order' => (int) ($node->sort_order ?? 999),
+            ];
+        }
+
+        uasort($result, fn(array $a, array $b): int => $a['sort_order'] <=> $b['sort_order']);
+
+        return array_map(fn(array $item): string => $item['label'], $result);
+    }
+
+    /**
+     * Get the full config node for a registered provider.
+     */
+    public static function getProviderConfig(string $code): ?Varien_Simplexml_Element
+    {
+        $node = Mage::getConfig()->getNode("global/ai/providers/{$code}");
+        return $node ?: null;
+    }
+
+    /**
+     * Get providers that declare a given capability, sorted by sort_order.
+     *
+     * @param string $capability  One of: chat, embed, image, video
+     * @return array<string, string>  code => label
+     */
+    public static function getProvidersWithCapability(string $capability): array
+    {
+        $providers = Mage::getConfig()->getNode('global/ai/providers');
+        if (!$providers) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($providers->children() as $code => $node) {
+            $capabilities = array_map('trim', explode(',', (string) ($node->capabilities ?? '')));
+            if (in_array($capability, $capabilities, true)) {
+                $result[(string) $code] = [
+                    'label'      => (string) $node->label,
+                    'sort_order' => (int) ($node->sort_order ?? 999),
+                ];
+            }
+        }
+
+        uasort($result, fn(array $a, array $b): int => $a['sort_order'] <=> $b['sort_order']);
+
+        return array_map(fn(array $item): string => $item['label'], $result);
     }
 }
