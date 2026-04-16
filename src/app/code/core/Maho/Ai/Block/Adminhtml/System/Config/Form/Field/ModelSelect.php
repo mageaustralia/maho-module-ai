@@ -49,8 +49,6 @@ class Maho_Ai_Block_Adminhtml_System_Config_Form_Field_ModelSelect extends Mage_
             $jsInit = <<<'JS'
 <script>
 function mahoAiFetchModels(url, selectId, btn) {
-    // Replace the baked-in admin secret key with the current page's key,
-    // since the key is session-dependent and the URL was rendered at page-load time.
     var keyMatch = window.location.href.match(/\/key\/([a-f0-9]+)\//);
     if (keyMatch) {
         url = url.replace(/\/key\/[a-f0-9]+\//, '/key/' + keyMatch[1] + '/');
@@ -65,17 +63,30 @@ function mahoAiFetchModels(url, selectId, btn) {
                 alert('Error: ' + data.error);
                 return;
             }
-            var select = document.getElementById(selectId);
-            var current = select ? select.value : '';
-            if (select) {
-                select.innerHTML = '';
-                data.models.forEach(function(m) {
-                    var opt = document.createElement('option');
-                    opt.value = m.value;
-                    opt.text = m.label;
-                    if (m.value === current) { opt.selected = true; }
-                    select.appendChild(opt);
-                });
+            var el = document.getElementById(selectId);
+            if (!el) return;
+            var current = el.value;
+            // If the element is an input (text field), replace it with a select
+            if (el.tagName === 'INPUT') {
+                var sel = document.createElement('select');
+                sel.id = el.id;
+                sel.name = el.name;
+                sel.className = el.className;
+                sel.style.cssText = el.style.cssText;
+                el.parentNode.replaceChild(sel, el);
+                el = sel;
+            }
+            el.innerHTML = '';
+            data.models.forEach(function(m) {
+                var opt = document.createElement('option');
+                opt.value = m.value;
+                opt.text = m.label;
+                if (m.value === current) { opt.selected = true; }
+                el.appendChild(opt);
+            });
+            // If no option matched the previous value, select it anyway
+            if (current && !el.querySelector('option[selected]')) {
+                el.value = current;
             }
         })
         .catch(function(e) { alert('Error: ' + e.message); })
