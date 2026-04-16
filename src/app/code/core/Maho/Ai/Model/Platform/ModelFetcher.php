@@ -22,7 +22,7 @@ class Maho_Ai_Model_Platform_ModelFetcher
      * @return list<array{value: string, label: string}>
      * @throws Mage_Core_Exception
      */
-    public function fetchForProvider(string $provider): array
+    public function fetchForProvider(string $provider, string $capability = 'chat'): array
     {
         return match ($provider) {
             'openai'     => $this->fetchOpenAi(),
@@ -31,7 +31,7 @@ class Maho_Ai_Model_Platform_ModelFetcher
             'mistral'    => $this->fetchMistral(),
             'openrouter' => $this->fetchOpenRouter(),
             'ollama'     => $this->fetchOllama(),
-            default      => throw new Mage_Core_Exception("No model fetcher for provider: {$provider}"),
+            default      => $this->fetchFromRegistry($provider, $capability),
         };
     }
 
@@ -220,5 +220,34 @@ class Maho_Ai_Model_Platform_ModelFetcher
 
         usort($models, fn($a, $b) => strcmp($a['value'], $b['value']));
         return $models;
+    }
+
+    /**
+     * Fetch models from a community provider's registered model fetcher.
+     *
+     * @return list<array{value: string, label: string}>
+     * @throws Mage_Core_Exception
+     */
+    private function fetchFromRegistry(string $provider, string $capability): array
+    {
+        $config = Maho_Ai_Model_Platform::getProviderConfig($provider);
+        if (!$config) {
+            throw new Mage_Core_Exception("Unknown AI platform: {$provider}");
+        }
+
+        // Check for model_fetcher_class (community providers)
+        $fetcherClass = (string) ($config->model_fetcher_class ?? '');
+        if (!$fetcherClass) {
+            throw new Mage_Core_Exception("No model fetcher for provider: {$provider}");
+        }
+
+        $fetcher = new $fetcherClass();
+        if (!($fetcher instanceof Maho_Ai_Model_Platform_ModelFetcherInterface)) {
+            throw new Mage_Core_Exception(
+                "Model fetcher '{$fetcherClass}' must implement ModelFetcherInterface.",
+            );
+        }
+
+        return $fetcher->fetchModels($capability);
     }
 }
