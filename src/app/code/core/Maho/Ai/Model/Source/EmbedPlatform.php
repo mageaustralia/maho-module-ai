@@ -15,12 +15,10 @@ class Maho_Ai_Model_Source_EmbedPlatform
 {
     public function toOptionArray(): array
     {
-        return [
-            ['value' => Maho_Ai_Model_Platform::OPENAI,  'label' => 'OpenAI'],
-            ['value' => Maho_Ai_Model_Platform::GOOGLE,  'label' => 'Google'],
-            ['value' => Maho_Ai_Model_Platform::MISTRAL, 'label' => 'Mistral'],
-            ['value' => Maho_Ai_Model_Platform::OLLAMA,  'label' => 'Ollama (local)'],
-            ['value' => Maho_Ai_Model_Platform::GENERIC, 'label' => 'Generic (OpenAI-compatible)'],
-        ];
+        $options = [];
+        foreach (Maho_Ai_Model_Platform::getProvidersWithCapability('embed') as $code => $label) {
+            $options[] = ['value' => $code, 'label' => $label];
+        }
+        return $options;
     }
 }

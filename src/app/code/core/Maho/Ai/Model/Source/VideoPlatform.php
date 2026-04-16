@@ -7,16 +7,16 @@ declare(strict_types=1);
  *
  * @category   Maho
  * @package    Maho_Ai
- * @copyright  Copyright (c) 2025-2026 Maho (https://mahocommerce.com)
+ * @copyright  Copyright (c) 2026 Maho (https://mahocommerce.com)
  * @license    https://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
-class Maho_Ai_Model_Source_ImagePlatform
+class Maho_Ai_Model_Source_VideoPlatform
 {
     public function toOptionArray(): array
     {
         $options = [];
-        foreach (Maho_Ai_Model_Platform::getProvidersWithCapability('image') as $code => $label) {
+        foreach (Maho_Ai_Model_Platform::getProvidersWithCapability('video') as $code => $label) {
             $options[] = ['value' => $code, 'label' => $label];
         }
         return $options;
