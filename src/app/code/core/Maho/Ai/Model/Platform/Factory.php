@@ -30,7 +30,8 @@ class Maho_Ai_Model_Platform_Factory
             Maho_Ai_Model_Platform::OPENROUTER => $this->createOpenRouter($storeId),
             Maho_Ai_Model_Platform::OLLAMA     => $this->createOllama($storeId),
             Maho_Ai_Model_Platform::GENERIC    => $this->createGeneric($storeId),
-            default => throw new Mage_Core_Exception("Unknown AI platform: {$platformCode}"),
+            default => $this->createFromRegistry($platformCode, $storeId, 'chat',
+                Maho_Ai_Model_Platform_ProviderInterface::class),
         };
     }
 
@@ -56,12 +57,9 @@ class Maho_Ai_Model_Platform_Factory
             Maho_Ai_Model_Platform::MISTRAL  => $this->createMistralForEmbed($storeId),
             Maho_Ai_Model_Platform::OLLAMA   => $this->createOllamaForEmbed($storeId),
             Maho_Ai_Model_Platform::GENERIC  => $this->createGenericForEmbed($storeId),
-            default => throw new Mage_Core_Exception("Platform '{$platformCode}' does not support embeddings."),
+            default => $this->createFromRegistry($platformCode, $storeId, 'embed',
+                Maho_Ai_Model_Platform_EmbedProviderInterface::class),
         };
-
-        if (!($provider instanceof Maho_Ai_Model_Platform_EmbedProviderInterface)) {
-            throw new Mage_Core_Exception("Platform '{$platformCode}' does not implement EmbedProviderInterface.");
-        }
 
         return $provider;
     }
@@ -80,12 +78,9 @@ class Maho_Ai_Model_Platform_Factory
             Maho_Ai_Model_Platform::OPENAI  => $this->createOpenAi($storeId),
             Maho_Ai_Model_Platform::GOOGLE  => $this->createGoogle($storeId),
             Maho_Ai_Model_Platform::GENERIC => $this->createGenericForImage($storeId),
-            default => throw new Mage_Core_Exception("Platform '{$platformCode}' does not support image generation."),
+            default => $this->createFromRegistry($platformCode, $storeId, 'image',
+                Maho_Ai_Model_Platform_ImageProviderInterface::class),
         };
-
-        if (!($provider instanceof Maho_Ai_Model_Platform_ImageProviderInterface)) {
-            throw new Mage_Core_Exception("Platform '{$platformCode}' does not implement ImageProviderInterface.");
-        }
 
         return $provider;
     }
@@ -250,5 +245,83 @@ class Maho_Ai_Model_Platform_Factory
             apiKey: $apiKey,
             defaultModel: $this->getConfig('maho_ai/image/generic_model', $storeId),
         );
+    }
+
+    /**
+     * Create a provider instance that implements VideoProviderInterface.
+     *
+     * @throws Mage_Core_Exception if platform is not configured, unknown, or does not support video
+     */
+    public function createVideo(?string $platformCode = null, ?int $storeId = null): Maho_Ai_Model_Platform_VideoProviderInterface
+    {
+        $platformCode ??= (string) Mage::getStoreConfig('maho_ai/video/default_platform', $storeId);
+
+        if (!$platformCode) {
+            throw new Mage_Core_Exception('No video provider configured.');
+        }
+
+        $provider = $this->createFromRegistry(
+            $platformCode,
+            $storeId,
+            'video',
+            Maho_Ai_Model_Platform_VideoProviderInterface::class,
+        );
+
+        return $provider;
+    }
+
+    /**
+     * Create a provider from the config XML registry.
+     *
+     * Looks up global/ai/providers/{$code} for factory_class or factory_method.
+     *
+     * @throws Mage_Core_Exception
+     */
+    private function createFromRegistry(
+        string $platformCode,
+        ?int $storeId,
+        string $capability,
+        string $requiredInterface,
+    ): object {
+        $config = Maho_Ai_Model_Platform::getProviderConfig($platformCode);
+        if (!$config) {
+            throw new Mage_Core_Exception("Unknown AI platform: {$platformCode}");
+        }
+
+        // Verify capability
+        $capabilities = array_map('trim', explode(',', (string) ($config->capabilities ?? '')));
+        if (!in_array($capability, $capabilities, true)) {
+            throw new Mage_Core_Exception("Platform '{$platformCode}' does not support {$capability}.");
+        }
+
+        // Built-in providers can use factory_method to call existing private methods
+        $factoryMethod = (string) ($config->factory_method ?? '');
+        if ($factoryMethod && method_exists($this, $factoryMethod)) {
+            $provider = $this->$factoryMethod($storeId);
+        }
+        // Community providers use factory_class
+        elseif ($config->factory_class) {
+            $factoryClass = (string) $config->factory_class;
+            $factory = new $factoryClass();
+            if (!($factory instanceof Maho_Ai_Model_Platform_ProviderFactoryInterface)) {
+                throw new Mage_Core_Exception(
+                    "Factory class '{$factoryClass}' must implement ProviderFactoryInterface.",
+                );
+            }
+            $provider = $factory->create($storeId);
+        } else {
+            throw new Mage_Core_Exception(
+                "Provider '{$platformCode}' has no factory_method or factory_class configured.",
+            );
+        }
+
+        if (!($provider instanceof $requiredInterface)) {
+            $shortInterface = basename(str_replace('_', '/', $requiredInterface));
+            throw new Mage_Core_Exception(
+                "Platform '{$platformCode}' does not implement {$shortInterface}.",
+            );
+        }
+
+        return $provider;
     }
 }
