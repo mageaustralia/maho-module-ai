@@ -235,7 +235,13 @@ class Maho_Ai_Model_Platform_ModelFetcher
             throw new Mage_Core_Exception("Unknown AI platform: {$provider}");
         }
 
-        // Check for model_fetcher_class (community providers)
+        // Built-in providers can use model_fetcher_method (mirrors factory_method pattern)
+        $fetcherMethod = (string) ($config->model_fetcher_method ?? '');
+        if ($fetcherMethod && method_exists($this, $fetcherMethod)) {
+            return $this->$fetcherMethod();
+        }
+
+        // Community providers use model_fetcher_class
         $fetcherClass = (string) ($config->model_fetcher_class ?? '');
         if (!$fetcherClass) {
             throw new Mage_Core_Exception("No model fetcher for provider: {$provider}");
