@@ -128,6 +128,7 @@ class Maho_Ai_Adminhtml_AiController extends Mage_Adminhtml_Controller_Action
         $this->getResponse()->setHeader('Content-Type', 'application/json');
 
         $provider = (string) $this->getRequest()->getParam('provider');
+        $capability = (string) $this->getRequest()->getParam('capability') ?: 'chat';
         if ($provider === '') {
             $this->getResponse()->setBody(json_encode(['error' => 'Provider is required.']));
             return;
@@ -136,7 +137,7 @@ class Maho_Ai_Adminhtml_AiController extends Mage_Adminhtml_Controller_Action
         try {
             /** @var Maho_Ai_Model_Platform_ModelFetcher $fetcher */
             $fetcher = Mage::getModel('ai/platform_modelFetcher');
-            $models = $fetcher->fetchForProvider($provider);
+            $models = $fetcher->fetchForProvider($provider, $capability);
 
             // Cache result in config so source models can use it
             Mage::getModel('core/config')->saveConfig(

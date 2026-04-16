@@ -13,21 +13,23 @@ declare(strict_types=1);
 
 class Maho_Ai_Block_Adminhtml_System_Config_Form_Field_ModelSelect extends Mage_Adminhtml_Block_System_Config_Form_Field
 {
-    /** Providers that expose a models API endpoint. */
-    private const FETCHABLE_PROVIDERS = ['openai', 'anthropic', 'google', 'mistral', 'openrouter', 'ollama'];
-
     #[\Override]
     protected function _getElementHtml(Varien_Data_Form_Element_Abstract $element): string
     {
         $html = parent::_getElementHtml($element);
 
-        // Extract provider from element HTML ID: maho_ai_general_{provider}_model
+        // Extract provider and capability group from element HTML ID: maho_ai_{group}_{provider}_model
         $elementId = $element->getHtmlId();
         $provider = null;
-        if (preg_match('/^maho_ai_general_(.+)_model$/', $elementId, $matches)) {
-            $candidate = $matches[1];
-            if (in_array($candidate, self::FETCHABLE_PROVIDERS, true)) {
+        $capability = 'chat';
+        if (preg_match('/^maho_ai_(general|image|embed|video)_(.+)_model$/', $elementId, $matches)) {
+            $group = $matches[1];
+            $candidate = $matches[2];
+            // Check if provider has a model fetcher (built-in method or community class)
+            $config = Maho_Ai_Model_Platform::getProviderConfig($candidate);
+            if ($config && ((string) ($config->model_fetcher_method ?? '') || (string) ($config->model_fetcher_class ?? ''))) {
                 $provider = $candidate;
+                $capability = $group === 'general' ? 'chat' : $group;
             }
         }
 
@@ -36,7 +38,7 @@ class Maho_Ai_Block_Adminhtml_System_Config_Form_Field_ModelSelect extends Mage_
         }
 
         $fetchUrl = $this->escapeHtml(
-            $this->getUrl('*/ai/fetchModels', ['provider' => $provider]),
+            $this->getUrl('*/ai/fetchModels', ['provider' => $provider, 'capability' => $capability]),
         );
         $escapedId = $this->escapeHtml($elementId);
 
