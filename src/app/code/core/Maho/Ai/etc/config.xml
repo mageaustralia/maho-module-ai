@@ -142,6 +142,15 @@
                 </maho_ai>
             </updates>
         </layout>
+        <translate>
+            <modules>
+                <Maho_Ai>
+                    <files>
+                        <default>Maho_Ai.csv</default>
+                    </files>
+                </Maho_Ai>
+            </modules>
+        </translate>
     </adminhtml>
 
     <admin>
