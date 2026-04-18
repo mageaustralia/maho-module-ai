@@ -25,16 +25,16 @@ $estMinutes    = $this->estimateMinutes($totalCount);
 </li></ul></li></ul></div>
 <?php endif ?>
 
-<div class="entry-edit" style="max-width:700px">
+<div class="entry-edit ai-entry--narrow">
     <div class="entry-edit-head"><h4><?php echo $helper->__('Current Configuration') ?></h4></div>
     <table class="form-list" cellspacing="0">
         <tr>
             <td class="label"><?php echo $helper->__('Embed Status') ?></td>
             <td class="value">
                 <?php if ($embedEnabled): ?>
-                    <span style="color:#3d8a3d;font-weight:bold"><?php echo $helper->__('Enabled') ?></span>
+                    <span class="ai-indicator--on"><?php echo $helper->__('Enabled') ?></span>
                 <?php else: ?>
-                    <span style="color:#c0392b;font-weight:bold"><?php echo $helper->__('Disabled') ?></span>
+                    <span class="ai-indicator--off"><?php echo $helper->__('Disabled') ?></span>
                 <?php endif ?>
             </td>
         </tr>
@@ -46,9 +46,9 @@ $estMinutes    = $this->estimateMinutes($totalCount);
             <td class="label"><?php echo $helper->__('Queue Status') ?></td>
             <td class="value">
                 <?php if ($queueEnabled): ?>
-                    <span style="color:#3d8a3d;font-weight:bold"><?php echo $helper->__('Enabled') ?></span>
+                    <span class="ai-indicator--on"><?php echo $helper->__('Enabled') ?></span>
                 <?php else: ?>
-                    <span style="color:#c0392b;font-weight:bold"><?php echo $helper->__('Disabled') ?></span>
+                    <span class="ai-indicator--off"><?php echo $helper->__('Disabled') ?></span>
                 <?php endif ?>
             </td>
         </tr>
@@ -61,10 +61,10 @@ $estMinutes    = $this->estimateMinutes($totalCount);
     </table>
 </div>
 
-<div class="entry-edit" style="max-width:700px;margin-top:16px">
+<div class="entry-edit ai-entry ai-entry--narrow">
     <div class="entry-edit-head"><h4><?php echo $helper->__('Queue for Embedding') ?></h4></div>
 
-    <div style="padding:12px 16px;background:#fff8e1;border:1px solid #ffe082;border-radius:3px;margin:12px 16px">
+    <div class="ai-note-box">
         <strong><?php echo $helper->__('Note:') ?></strong>
         <?php echo $helper->__('This queues %s products and %s categories (%s tasks total) for background processing.',
             '<strong>' . number_format($productCount) . '</strong>',
@@ -89,7 +89,7 @@ $estMinutes    = $this->estimateMinutes($totalCount);
             <tr>
                 <td class="label"><?php echo $helper->__('Queue') ?></td>
                 <td class="value">
-                    <div style="margin-bottom:8px">
+                    <div class="ai-reindex-checkbox-row">
                         <input type="checkbox" name="types[]" value="products" id="reindex_products" checked="checked"/>
                         <label for="reindex_products">
                             <?php echo $helper->__('Products (%s enabled)', number_format($productCount)) ?>
@@ -104,9 +104,9 @@ $estMinutes    = $this->estimateMinutes($totalCount);
                 </td>
             </tr>
         </table>
-        <div style="padding:12px 16px">
+        <div class="ai-reindex-actions">
             <button type="submit" class="scalable save" id="reindex-submit"
-                onclick="return confirm('<?php echo $helper->__('This will queue all selected items for embedding. Continue?') ?>')">
+                data-maho-confirm="<?php echo $this->escapeHtml($helper->__('This will queue all selected items for embedding. Continue?')) ?>">
                 <span><?php echo $helper->__('Queue for Embedding') ?></span>
             </button>
         </div>

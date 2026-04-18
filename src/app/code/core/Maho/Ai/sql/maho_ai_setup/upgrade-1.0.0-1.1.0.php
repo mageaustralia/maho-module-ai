@@ -80,9 +80,9 @@ if (!$connection->isTableExists($this->getTable('ai/vector'))) {
             'default'  => Maho\Db\Ddl\Table::TIMESTAMP_INIT_UPDATE,
         ], 'Updated At')
         ->addIndex(
-            $this->getIdxName('ai/vector', ['entity_type', 'entity_id', 'store_id'], Varien_Db_Adapter_Interface::INDEX_TYPE_UNIQUE),
+            $this->getIdxName('ai/vector', ['entity_type', 'entity_id', 'store_id'], \Maho\Db\Adapter\AdapterInterface::INDEX_TYPE_UNIQUE),
             ['entity_type', 'entity_id', 'store_id'],
-            ['type' => Varien_Db_Adapter_Interface::INDEX_TYPE_UNIQUE],
+            ['type' => \Maho\Db\Adapter\AdapterInterface::INDEX_TYPE_UNIQUE],
         )
         ->addIndex(
             $this->getIdxName('ai/vector', ['entity_type', 'entity_id']),

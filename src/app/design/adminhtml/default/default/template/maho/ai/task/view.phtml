@@ -2,15 +2,7 @@
 /** @var Maho_Ai_Block_Adminhtml_Task_View $this */
 $task   = $this->getTask();
 $helper = Mage::helper('ai');
-
-$statusColors = [
-    'pending'    => '#7b8a97',
-    'processing' => '#5577aa',
-    'complete'   => '#3d8a3d',
-    'failed'     => '#c0392b',
-    'cancelled'  => '#999',
-];
-$statusColor = $statusColors[$task->getData('status')] ?? '#333';
+$status = (string) $task->getData('status');
 ?>
 <div class="content-header">
     <table cellspacing="0">
@@ -28,8 +20,8 @@ $statusColor = $statusColors[$task->getData('status')] ?? '#333';
     <table class="form-list" cellspacing="0">
         <tr>
             <td class="label"><?php echo $helper->__('Status') ?></td>
-            <td class="value"><strong style="color:<?php echo $statusColor ?>">
-                <?php echo $this->escapeHtml(ucfirst($task->getData('status'))) ?>
+            <td class="value"><strong class="ai-status ai-status--<?php echo $this->escapeHtml($status) ?>">
+                <?php echo $this->escapeHtml(ucfirst($status)) ?>
             </strong></td>
             <td class="label"><?php echo $helper->__('Type') ?></td>
             <td class="value"><?php echo $this->escapeHtml(ucfirst($task->getData('task_type'))) ?></td>
@@ -75,18 +67,18 @@ $statusColor = $statusColors[$task->getData('status')] ?? '#333';
 </div>
 
 <?php if ($task->getData('error_message')): ?>
-<div class="entry-edit" style="margin-top:16px">
-    <div class="entry-edit-head"><h4 style="color:#c0392b"><?php echo $helper->__('Error') ?></h4></div>
-    <div style="padding:12px 16px;background:#fff0f0;border:1px solid #f5c6cb;border-radius:3px;font-family:monospace;white-space:pre-wrap;font-size:12px">
+<div class="entry-edit ai-entry">
+    <div class="entry-edit-head"><h4 class="ai-error-head"><?php echo $helper->__('Error') ?></h4></div>
+    <div class="ai-error-box">
         <?php echo $this->escapeHtml($task->getData('error_message')) ?>
     </div>
 </div>
 <?php endif ?>
 
 <?php if ($task->getData('context')): ?>
-<div class="entry-edit" style="margin-top:16px">
+<div class="entry-edit ai-entry">
     <div class="entry-edit-head"><h4><?php echo $helper->__('Context') ?></h4></div>
-    <pre style="padding:12px 16px;background:#f8f8f8;border:1px solid #ddd;border-radius:3px;font-size:12px;overflow:auto"><?php
+    <pre class="ai-pre-box"><?php
         $ctx = json_decode($task->getData('context'), true);
         echo $this->escapeHtml(json_encode($ctx, JSON_PRETTY_PRINT));
     ?></pre>
@@ -97,12 +89,13 @@ $statusColor = $statusColors[$task->getData('status')] ?? '#333';
 $messages = json_decode($task->getData('messages') ?? '[]', true);
 if ($messages):
 ?>
-<div class="entry-edit" style="margin-top:16px">
+<div class="entry-edit ai-entry">
     <div class="entry-edit-head"><h4><?php echo $helper->__('Messages') ?></h4></div>
     <?php foreach ($messages as $msg): ?>
-    <div style="margin:8px 16px;padding:10px 14px;background:<?php echo $msg['role'] === 'user' ? '#f0f4ff' : '#f0fff4' ?>;border-radius:4px">
-        <strong style="font-size:11px;text-transform:uppercase;color:#666"><?php echo $this->escapeHtml($msg['role']) ?></strong>
-        <div style="margin-top:6px;white-space:pre-wrap;font-size:13px"><?php echo $this->escapeHtml(
+    <?php $roleClass = $msg['role'] === 'user' ? 'ai-message--user' : 'ai-message--assistant'; ?>
+    <div class="ai-message <?php echo $roleClass ?>">
+        <strong class="ai-message-role"><?php echo $this->escapeHtml($msg['role']) ?></strong>
+        <div class="ai-message-content"><?php echo $this->escapeHtml(
             strlen($msg['content'] ?? '') > 500 ? substr($msg['content'], 0, 500) . '…' : ($msg['content'] ?? '')
         ) ?></div>
     </div>
@@ -111,7 +104,7 @@ if ($messages):
 <?php endif ?>
 
 <?php if ($task->getData('response')): ?>
-<div class="entry-edit" style="margin-top:16px">
+<div class="entry-edit ai-entry">
     <div class="entry-edit-head"><h4><?php echo $helper->__('Response') ?></h4></div>
     <?php
     $response = $task->getData('response');
@@ -120,16 +113,16 @@ if ($messages):
         $vec = json_decode($response, true);
         $dims = is_array($vec) ? count($vec) : 0;
     ?>
-    <div style="padding:12px 16px;background:#f8f8f8;border:1px solid #ddd;border-radius:3px;font-size:13px">
+    <div class="ai-response-box">
         <?php echo $helper->__('Vector with %d dimensions', $dims) ?>
         <?php if ($dims > 0): ?>
-        <div style="margin-top:6px;font-family:monospace;font-size:11px;color:#666">
+        <div class="ai-vector-preview">
             [<?php echo $this->escapeHtml(implode(', ', array_slice($vec, 0, 8))) ?><?php echo $dims > 8 ? ', …' : '' ?>]
         </div>
         <?php endif ?>
     </div>
     <?php else: ?>
-    <div style="padding:12px 16px;background:#f8f8f8;border:1px solid #ddd;border-radius:3px;white-space:pre-wrap;font-size:13px;max-height:400px;overflow:auto">
+    <div class="ai-response-box ai-response-box--scroll">
         <?php echo $this->escapeHtml(strlen($response) > 2000 ? substr($response, 0, 2000) . '…' : $response) ?>
     </div>
     <?php endif ?>

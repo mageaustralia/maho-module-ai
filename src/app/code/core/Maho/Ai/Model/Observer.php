@@ -7,7 +7,7 @@ declare(strict_types=1);
  *
  * @category   Maho
  * @package    Maho_Ai
- * @copyright  Copyright (c) 2025-2026 Maho (https://mahocommerce.com)
+ * @copyright  Copyright (c) 2026 Maho (https://mahocommerce.com)
  * @license    https://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -17,7 +17,7 @@ class Maho_Ai_Model_Observer
      * Auto-queue an embedding task when a product is saved.
      * Triggered by: catalog_product_save_after
      */
-    public function onProductSave(Varien_Event_Observer $observer): void
+    public function onProductSave(\Maho\Event\Observer $observer): void
     {
         if (!Mage::getStoreConfigFlag('maho_ai/embed/enabled')) {
             return;
@@ -54,7 +54,7 @@ class Maho_Ai_Model_Observer
      * Auto-queue an embedding task when a category is saved.
      * Triggered by: catalog_category_save_after
      */
-    public function onCategorySave(Varien_Event_Observer $observer): void
+    public function onCategorySave(\Maho\Event\Observer $observer): void
     {
         if (!Mage::getStoreConfigFlag('maho_ai/embed/enabled')) {
             return;

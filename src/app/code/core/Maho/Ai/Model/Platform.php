@@ -81,7 +81,7 @@ class Maho_Ai_Model_Platform
     /**
      * Get the full config node for a registered provider.
      */
-    public static function getProviderConfig(string $code): ?Varien_Simplexml_Element
+    public static function getProviderConfig(string $code): ?\Maho\Simplexml\Element
     {
         $node = Mage::getConfig()->getNode("global/ai/providers/{$code}");
         return $node ?: null;

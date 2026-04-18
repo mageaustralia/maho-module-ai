@@ -10,21 +10,36 @@
  */
 -->
 <layout>
+    <maho_ai_default>
+        <reference name="head">
+            <action method="addItem"><type>skin_css</type><name>maho/ai.css</name></action>
+            <action method="addItem"><type>skin_js</type><name>maho/ai.js</name></action>
+        </reference>
+    </maho_ai_default>
+
     <adminhtml_ai_tasks>
+        <update handle="maho_ai_default"/>
         <reference name="content">
             <block type="ai/adminhtml_task" name="ai.tasks"/>
         </reference>
     </adminhtml_ai_tasks>
 
     <adminhtml_ai_view>
+        <update handle="maho_ai_default"/>
         <reference name="content">
             <block type="ai/adminhtml_task_view" name="ai.task.view" template="maho/ai/task/view.phtml"/>
         </reference>
     </adminhtml_ai_view>
 
     <adminhtml_ai_reindex>
+        <update handle="maho_ai_default"/>
         <reference name="content">
             <block type="ai/adminhtml_reindex" name="ai.reindex" template="maho/ai/reindex.phtml"/>
         </reference>
     </adminhtml_ai_reindex>
+
+    <!-- System config pages load the JS so ModelSelect's fetch button works -->
+    <adminhtml_system_config_edit>
+        <update handle="maho_ai_default"/>
+    </adminhtml_system_config_edit>
 </layout>

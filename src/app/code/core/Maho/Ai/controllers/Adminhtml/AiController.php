@@ -13,15 +13,12 @@ declare(strict_types=1);
 
 class Maho_Ai_Adminhtml_AiController extends Mage_Adminhtml_Controller_Action
 {
-    public const ADMIN_RESOURCE = 'system/config';
-
-    /** Skip secret key validation for AJAX — session cookie + ACL is sufficient. */
-    protected $_publicActions = ['fetchModels'];
+    public const ADMIN_RESOURCE = 'system/maho_ai';
 
     #[\Override]
     public function preDispatch(): static
     {
-        $this->_setForcedFormKeyActions(['reindexPost']);
+        $this->_setForcedFormKeyActions(['reindexPost', 'fetchModels']);
         return parent::preDispatch();
     }
 
@@ -119,8 +116,8 @@ class Maho_Ai_Adminhtml_AiController extends Mage_Adminhtml_Controller_Action
 
     /**
      * AJAX: fetch available models for a provider and cache in config.
-     * Listed in $_publicActions to skip URL secret key (incompatible with AJAX).
-     * CSRF is mitigated by ACL (admin session required) and browser same-origin policy.
+     * CSRF-protected by _setForcedFormKeyActions(['fetchModels']) in preDispatch —
+     * the JS side uses mahoFetch() which auto-sends form_key on POST.
      * Provider is implicitly whitelisted by fetchForProvider()'s match() statement.
      */
     public function fetchModelsAction(): void
