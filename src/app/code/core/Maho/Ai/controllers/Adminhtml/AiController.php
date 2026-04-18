@@ -97,6 +97,7 @@ class Maho_Ai_Adminhtml_AiController extends Mage_Adminhtml_Controller_Action
         if (in_array('products', $types)) {
             $queued += $this->_queueEntityType('product', $storeId);
         }
+
         if (in_array('categories', $types)) {
             $queued += $this->_queueEntityType('category', $storeId);
         }
@@ -138,14 +139,14 @@ class Maho_Ai_Adminhtml_AiController extends Mage_Adminhtml_Controller_Action
 
             // Cache result in config so source models can use it
             Mage::getModel('core/config')->saveConfig(
-                "maho_ai/models_cache/{$provider}",
+                'maho_ai/models_cache/' . $provider,
                 json_encode($models),
             );
             Mage::app()->getCache()->cleanType('config');
 
             $this->getResponse()->setBody(json_encode(['models' => $models]));
-        } catch (Exception $e) {
-            $this->getResponse()->setBody(json_encode(['error' => $e->getMessage()]));
+        } catch (Exception $exception) {
+            $this->getResponse()->setBody(json_encode(['error' => $exception->getMessage()]));
         }
     }
 
@@ -172,7 +173,7 @@ class Maho_Ai_Adminhtml_AiController extends Mage_Adminhtml_Controller_Action
         ];
 
         $flush = function () use (&$batch, &$count, $conn, $taskTable): void {
-            if ($batch) {
+            if ($batch !== []) {
                 $conn->insertMultiple($taskTable, $batch);
                 $count += count($batch);
                 $batch = [];
@@ -194,6 +195,7 @@ class Maho_Ai_Adminhtml_AiController extends Mage_Adminhtml_Controller_Action
                     if ($text === '') {
                         continue;
                     }
+
                     $batch[] = $baseRow + [
                         'consumer' => 'catalog_product',
                         'messages' => json_encode([['role' => 'user', 'content' => $text]]),
@@ -203,6 +205,7 @@ class Maho_Ai_Adminhtml_AiController extends Mage_Adminhtml_Controller_Action
                         $flush();
                     }
                 }
+
                 $collection->clear();
             }
         } elseif ($type === 'category') {
@@ -223,6 +226,7 @@ class Maho_Ai_Adminhtml_AiController extends Mage_Adminhtml_Controller_Action
                     if ($text === '') {
                         continue;
                     }
+
                     $batch[] = $baseRow + [
                         'consumer' => 'catalog_category',
                         'messages' => json_encode([['role' => 'user', 'content' => $text]]),
@@ -232,6 +236,7 @@ class Maho_Ai_Adminhtml_AiController extends Mage_Adminhtml_Controller_Action
                         $flush();
                     }
                 }
+
                 $collection->clear();
             }
         }

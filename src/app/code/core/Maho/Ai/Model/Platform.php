@@ -15,11 +15,17 @@ class Maho_Ai_Model_Platform
 {
     // Backward-compatible constants for built-in providers
     public const OPENAI     = 'openai';
+
     public const ANTHROPIC  = 'anthropic';
+
     public const GOOGLE     = 'google';
+
     public const MISTRAL    = 'mistral';
+
     public const OPENROUTER = 'openrouter';
+
     public const OLLAMA     = 'ollama';
+
     public const GENERIC    = 'generic';
 
     /**
@@ -52,6 +58,7 @@ class Maho_Ai_Model_Platform
         if (!$pricing) {
             return 0.0;
         }
+
         return ($inputTokens * $pricing[0]) + ($outputTokens * $pricing[1]);
     }
 
@@ -83,7 +90,7 @@ class Maho_Ai_Model_Platform
      */
     public static function getProviderConfig(string $code): ?\Maho\Simplexml\Element
     {
-        $node = Mage::getConfig()->getNode("global/ai/providers/{$code}");
+        $node = Mage::getConfig()->getNode('global/ai/providers/' . $code);
         return $node ?: null;
     }
 
@@ -102,7 +109,7 @@ class Maho_Ai_Model_Platform
 
         $result = [];
         foreach ($providers->children() as $code => $node) {
-            $capabilities = array_map('trim', explode(',', (string) ($node->capabilities ?? '')));
+            $capabilities = array_map(trim(...), explode(',', (string) ($node->capabilities ?? '')));
             if (in_array($capability, $capabilities, true)) {
                 $result[(string) $code] = [
                     'label'      => (string) $node->label,

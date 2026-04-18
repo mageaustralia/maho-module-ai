@@ -22,6 +22,7 @@ class Maho_Ai_Model_Observer
         if (!Mage::getStoreConfigFlag('maho_ai/embed/enabled')) {
             return;
         }
+
         if (!Mage::getStoreConfigFlag('maho_ai/embed/auto_embed_products')) {
             return;
         }
@@ -33,7 +34,7 @@ class Maho_Ai_Model_Observer
         }
 
         $text = $this->buildProductText($product);
-        if (!$text) {
+        if ($text === '' || $text === '0') {
             return;
         }
 
@@ -45,8 +46,8 @@ class Maho_Ai_Model_Observer
                 'entity_id'   => (int) $product->getId(),
                 'store_id'    => (int) $product->getStoreId(),
             ]);
-        } catch (Mage_Core_Exception $e) {
-            Mage::log('Maho AI: failed to queue product embed: ' . $e->getMessage(), Mage::LOG_WARNING, 'maho_ai.log');
+        } catch (Mage_Core_Exception $mageCoreException) {
+            Mage::log('Maho AI: failed to queue product embed: ' . $mageCoreException->getMessage(), Mage::LOG_WARNING, 'maho_ai.log');
         }
     }
 
@@ -59,6 +60,7 @@ class Maho_Ai_Model_Observer
         if (!Mage::getStoreConfigFlag('maho_ai/embed/enabled')) {
             return;
         }
+
         if (!Mage::getStoreConfigFlag('maho_ai/embed/auto_embed_categories')) {
             return;
         }
@@ -70,7 +72,7 @@ class Maho_Ai_Model_Observer
         }
 
         $text = $this->buildCategoryText($category);
-        if (!$text) {
+        if ($text === '' || $text === '0') {
             return;
         }
 
@@ -82,8 +84,8 @@ class Maho_Ai_Model_Observer
                 'entity_id'   => (int) $category->getId(),
                 'store_id'    => (int) $category->getStoreId(),
             ]);
-        } catch (Mage_Core_Exception $e) {
-            Mage::log('Maho AI: failed to queue category embed: ' . $e->getMessage(), Mage::LOG_WARNING, 'maho_ai.log');
+        } catch (Mage_Core_Exception $mageCoreException) {
+            Mage::log('Maho AI: failed to queue category embed: ' . $mageCoreException->getMessage(), Mage::LOG_WARNING, 'maho_ai.log');
         }
     }
 

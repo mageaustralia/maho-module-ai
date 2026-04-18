@@ -14,16 +14,23 @@ declare(strict_types=1);
 class Maho_Ai_Model_Task extends Mage_Core_Model_Abstract
 {
     public const STATUS_PENDING    = 'pending';
+
     public const STATUS_PROCESSING = 'processing';
+
     public const STATUS_COMPLETE   = 'complete';
+
     public const STATUS_FAILED     = 'failed';
+
     public const STATUS_CANCELLED  = 'cancelled';
 
     public const PRIORITY_INTERACTIVE = 'interactive';
+
     public const PRIORITY_BACKGROUND  = 'background';
 
     public const TYPE_COMPLETION = 'completion';
+
     public const TYPE_EMBEDDING  = 'embedding';
+
     public const TYPE_IMAGE      = 'image';
 
     #[\Override]
@@ -38,6 +45,7 @@ class Maho_Ai_Model_Task extends Mage_Core_Model_Abstract
         if (!$json) {
             return [];
         }
+
         return json_decode($json, true) ?? [];
     }
 
@@ -47,6 +55,7 @@ class Maho_Ai_Model_Task extends Mage_Core_Model_Abstract
         if (!$json) {
             return [];
         }
+
         return json_decode($json, true) ?? [];
     }
 
@@ -100,6 +109,7 @@ class Maho_Ai_Model_Task extends Mage_Core_Model_Abstract
             $this->setData('error_message', $errorMessage);
             $this->setData('completed_at', date('Y-m-d H:i:s'));
         }
+
         return $this;
     }
 }

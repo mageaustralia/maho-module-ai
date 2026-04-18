@@ -16,7 +16,7 @@ class Maho_Ai_Model_Safety_InputValidator
     /**
      * Patterns that indicate prompt injection attempts
      */
-    private const INJECTION_PATTERNS = [
+    private const array INJECTION_PATTERNS = [
         '/ignore\s+(all\s+)?(previous|prior|above|earlier)\s+instructions?/i',
         '/disregard\s+(all\s+)?(previous|prior|above|earlier)\s+instructions?/i',
         '/forget\s+(all\s+)?(previous|prior|above|earlier)\s+instructions?/i',
@@ -57,7 +57,7 @@ class Maho_Ai_Model_Safety_InputValidator
 
         // Check base64 encoded content that might hide instructions
         if (preg_match('/[A-Za-z0-9+\/]{50,}={0,2}/', $input)) {
-            $decoded = base64_decode(preg_replace('/[^A-Za-z0-9+\/=]/', '', $input), true);
+            $decoded = base64_decode((string) preg_replace('/[^A-Za-z0-9+\/=]/', '', $input), true);
             if ($decoded !== false && strlen($decoded) > 20) {
                 // Check decoded content for injection patterns too
                 foreach (self::INJECTION_PATTERNS as $pattern) {
@@ -73,8 +73,8 @@ class Maho_Ai_Model_Safety_InputValidator
 
         // Check custom blocked patterns from config
         $customPatterns = (string) Mage::getStoreConfig('maho_ai/safety/blocked_patterns');
-        if ($customPatterns) {
-            foreach (array_filter(array_map('trim', explode("\n", $customPatterns))) as $pattern) {
+        if ($customPatterns !== '' && $customPatterns !== '0') {
+            foreach (array_filter(array_map(trim(...), explode("\n", $customPatterns))) as $pattern) {
                 if (@preg_match($pattern, $input)) {
                     return [
                         'safe'   => false,

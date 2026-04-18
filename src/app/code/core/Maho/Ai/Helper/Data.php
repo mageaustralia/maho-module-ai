@@ -54,6 +54,7 @@ class Maho_Ai_Helper_Data extends Mage_Core_Helper_Abstract
             if (!$validation['safe']) {
                 throw new Mage_Core_Exception('AI request rejected: ' . $validation['reason']);
             }
+
             $messages[] = ['role' => 'user', 'content' => $userMessage];
         } else {
             // Validate each user message in the array
@@ -65,6 +66,7 @@ class Maho_Ai_Helper_Data extends Mage_Core_Helper_Abstract
                     }
                 }
             }
+
             $messages = array_merge($messages, $userMessage);
         }
 
@@ -164,6 +166,7 @@ class Maho_Ai_Helper_Data extends Mage_Core_Helper_Abstract
         if (!$this->isEnabled($storeId)) {
             throw new Mage_Core_Exception('Maho AI is disabled.');
         }
+
         if (!Mage::getStoreConfigFlag('maho_ai/embed/enabled', $storeId)) {
             throw new Mage_Core_Exception('Maho AI embeddings are disabled.');
         }
@@ -236,7 +239,7 @@ class Maho_Ai_Helper_Data extends Mage_Core_Helper_Abstract
             'platform'        => $data['platform'] ?? null,
             'model'           => $data['model'] ?? null,
             'messages'        => json_encode([['role' => 'user', 'content' => $data['text'] ?? '']]),
-            'context'         => $context ? json_encode($context) : null,
+            'context'         => $context !== [] ? json_encode($context) : null,
             'callback_class'  => $data['callback_class'] ?? null,
             'callback_method' => $data['callback_method'] ?? null,
             'max_retries'     => $data['max_retries'] ?? 3,
@@ -392,7 +395,7 @@ class Maho_Ai_Helper_Data extends Mage_Core_Helper_Abstract
             return;
         }
 
-        $logLevel = Mage::getStoreConfig('maho_ai/general/log_level');
+        Mage::getStoreConfig('maho_ai/general/log_level');
 
         $message = sprintf(
             '[%s] consumer=%s platform=%s model=%s in=%d out=%d cost=$%.6f',

@@ -33,7 +33,7 @@ if (!$connection->tableColumnExists($taskTable, 'task_type')) {
 // Add index on task_type
 $idxName = $this->getIdxName('ai/task', ['task_type']);
 $indexes = $connection->getIndexList($taskTable);
-if (!isset($indexes[strtoupper($idxName)])) {
+if (!isset($indexes[strtoupper((string) $idxName)])) {
     $connection->addIndex($taskTable, $idxName, ['task_type']);
 }
 

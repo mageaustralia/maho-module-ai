@@ -19,6 +19,7 @@ class Maho_Ai_Model_Source_Platform
         foreach (Maho_Ai_Model_Platform::getAll() as $code => $label) {
             $options[] = ['value' => $code, 'label' => $label];
         }
+
         return $options;
     }
 }

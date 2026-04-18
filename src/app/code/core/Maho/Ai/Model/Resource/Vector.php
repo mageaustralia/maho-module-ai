@@ -76,7 +76,7 @@ class Maho_Ai_Model_Resource_Vector extends Mage_Core_Model_Resource_Db_Abstract
         }
 
         return [
-            'vector'     => json_decode($row['vector'], true) ?? [],
+            'vector'     => json_decode((string) $row['vector'], true) ?? [],
             'model'      => $row['model'],
             'platform'   => $row['platform'],
             'dimensions' => (int) $row['dimensions'],

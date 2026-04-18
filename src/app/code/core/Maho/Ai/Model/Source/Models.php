@@ -59,24 +59,27 @@ class Maho_Ai_Model_Source_Models
         if ($this->provider !== '') {
             return $this->getForProvider($this->provider);
         }
+
         $options = [];
         foreach (static::$defaults as $models) {
             foreach ($models as $model) {
                 $options[] = $model;
             }
         }
+
         return $options;
     }
 
     protected function getForProvider(string $provider): array
     {
-        $cached = Mage::getStoreConfig("maho_ai/models_cache/{$provider}");
+        $cached = Mage::getStoreConfig('maho_ai/models_cache/' . $provider);
         if ($cached) {
             $decoded = json_decode($cached, true);
             if (is_array($decoded) && $decoded !== []) {
                 return $decoded;
             }
         }
+
         return static::$defaults[$provider] ?? [];
     }
 }

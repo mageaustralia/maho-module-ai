@@ -34,7 +34,7 @@ class Maho_Ai_Model_TaskRunner
         $collection->addFieldToFilter('status', Maho_Ai_Model_Task::STATUS_PENDING)
             ->addExpressionFieldToSelect(
                 'priority_order',
-                'CASE WHEN {{priority}} = \'interactive\' THEN 0 ELSE 1 END',
+                "CASE WHEN {{priority}} = 'interactive' THEN 0 ELSE 1 END",
                 ['priority' => 'priority'],
             )
             ->setOrder('priority_order', 'ASC')
@@ -110,12 +110,12 @@ class Maho_Ai_Model_TaskRunner
                 Maho_Ai_Model_Task::TYPE_COMPLETION => $this->executeCompletionTask($task),
                 Maho_Ai_Model_Task::TYPE_EMBEDDING  => $this->executeEmbedTask($task),
                 Maho_Ai_Model_Task::TYPE_IMAGE      => $this->executeImageTask($task),
-                default => throw new Mage_Core_Exception("Unknown task type: {$taskType}"),
+                default => throw new Mage_Core_Exception('Unknown task type: ' . $taskType),
             };
-        } catch (Throwable $e) {
-            $task->markFailed($e->getMessage())->save();
+        } catch (Throwable $throwable) {
+            $task->markFailed($throwable->getMessage())->save();
             Mage::log(
-                sprintf('Maho AI task #%d failed: %s', $task->getId(), $e->getMessage()),
+                sprintf('Maho AI task #%d failed: %s', $task->getId(), $throwable->getMessage()),
                 Mage::LOG_ERROR,
                 'maho_ai.log',
             );
@@ -252,13 +252,13 @@ class Maho_Ai_Model_TaskRunner
         }
 
         if (!class_exists($callbackClass)) {
-            Mage::log("Maho AI: callback class {$callbackClass} not found", Mage::LOG_WARNING, 'maho_ai.log');
+            Mage::log(sprintf('Maho AI: callback class %s not found', $callbackClass), Mage::LOG_WARNING, 'maho_ai.log');
             return;
         }
 
         $instance = new $callbackClass();
         if (!method_exists($instance, $callbackMethod)) {
-            Mage::log("Maho AI: callback method {$callbackClass}::{$callbackMethod} not found", Mage::LOG_WARNING, 'maho_ai.log');
+            Mage::log(sprintf('Maho AI: callback method %s::%s not found', $callbackClass, $callbackMethod), Mage::LOG_WARNING, 'maho_ai.log');
             return;
         }
 

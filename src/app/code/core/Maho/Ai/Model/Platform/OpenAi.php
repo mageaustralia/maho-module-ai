@@ -22,13 +22,17 @@ class Maho_Ai_Model_Platform_OpenAi implements
     Maho_Ai_Model_Platform_ImageProviderInterface
 {
     protected string $baseUrl = 'https://api.openai.com/v1';
+
     protected string $platformCode = Maho_Ai_Model_Platform::OPENAI;
 
     private array $lastTokenUsage = ['input' => 0, 'output' => 0];
+
     private string $lastModel = '';
 
     private array $lastEmbedTokenUsage = ['input' => 0];
+
     private string $lastEmbedModel = '';
+
     private string $lastImageModel = '';
 
     public function __construct(
@@ -76,7 +80,7 @@ class Maho_Ai_Model_Platform_OpenAi implements
 
         if ($statusCode !== 200) {
             $error = $data['error']['message'] ?? 'Unknown error';
-            throw new Mage_Core_Exception("OpenAI API error ({$statusCode}): {$error}");
+            throw new Mage_Core_Exception(sprintf('OpenAI API error (%s): %s', $statusCode, $error));
         }
 
         $this->lastTokenUsage = [
@@ -121,7 +125,7 @@ class Maho_Ai_Model_Platform_OpenAi implements
 
         // text-embedding-3-* support native dimension reduction
         if (isset($options['dimensions']) && (int) $options['dimensions'] > 0
-            && str_contains($model, 'text-embedding-3')
+            && str_contains((string) $model, 'text-embedding-3')
         ) {
             $payload['dimensions'] = (int) $options['dimensions'];
         }
@@ -143,7 +147,7 @@ class Maho_Ai_Model_Platform_OpenAi implements
 
         if ($statusCode !== 200) {
             $error = $data['error']['message'] ?? 'Unknown error';
-            throw new Mage_Core_Exception("OpenAI Embeddings API error ({$statusCode}): {$error}");
+            throw new Mage_Core_Exception(sprintf('OpenAI Embeddings API error (%s): %s', $statusCode, $error));
         }
 
         $this->lastEmbedTokenUsage = ['input' => $data['usage']['total_tokens'] ?? 0];
@@ -152,11 +156,12 @@ class Maho_Ai_Model_Platform_OpenAi implements
         foreach ($data['data'] as $item) {
             $vectors[$item['index']] = $item['embedding'];
         }
+
         ksort($vectors);
 
         // Truncate if target dimensions requested and not natively reduced
         if (isset($options['dimensions']) && (int) $options['dimensions'] > 0
-            && !str_contains($model, 'text-embedding-3')
+            && !str_contains((string) $model, 'text-embedding-3')
         ) {
             $target  = (int) $options['dimensions'];
             $vectors = array_map(fn(array $v): array => array_slice($v, 0, $target), $vectors);
@@ -211,6 +216,7 @@ class Maho_Ai_Model_Platform_OpenAi implements
         if (isset($options['quality'])) {
             $payload['quality'] = $options['quality'];
         }
+
         if (isset($options['style'])) {
             $payload['style'] = $options['style'];
         }
@@ -232,7 +238,7 @@ class Maho_Ai_Model_Platform_OpenAi implements
 
         if ($statusCode !== 200) {
             $error = $data['error']['message'] ?? 'Unknown error';
-            throw new Mage_Core_Exception("OpenAI Images API error ({$statusCode}): {$error}");
+            throw new Mage_Core_Exception(sprintf('OpenAI Images API error (%s): %s', $statusCode, $error));
         }
 
         return $data['data'][0]['url'] ?? '';
@@ -262,6 +268,6 @@ class Maho_Ai_Model_Platform_OpenAi implements
         $h = (int) ($options['height'] ?? 1024);
         // DALL-E 3 supports 1024x1024, 1024x1792, 1792x1024
         // DALL-E 2 supports 256x256, 512x512, 1024x1024
-        return "{$w}x{$h}";
+        return sprintf('%dx%d', $w, $h);
     }
 }

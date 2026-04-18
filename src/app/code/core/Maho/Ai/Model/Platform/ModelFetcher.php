@@ -52,13 +52,13 @@ class Maho_Ai_Model_Platform_ModelFetcher
     private function fetchOpenAi(): array
     {
         $apiKey = $this->getEncryptedConfig('maho_ai/general/openai_api_key');
-        if (!$apiKey) {
+        if ($apiKey === '' || $apiKey === '0') {
             throw new Mage_Core_Exception('OpenAI API key is not configured.');
         }
 
         $client = HttpClient::create();
         $response = $client->request('GET', 'https://api.openai.com/v1/models', [
-            'headers' => ['Authorization' => "Bearer {$apiKey}"],
+            'headers' => ['Authorization' => 'Bearer ' . $apiKey],
             'timeout' => 10,
         ]);
 
@@ -68,16 +68,16 @@ class Maho_Ai_Model_Platform_ModelFetcher
             $id = $model['id'];
             // Include chat-capable models only
             if (
-                str_starts_with($id, 'gpt-') ||
-                str_starts_with($id, 'o1') ||
-                str_starts_with($id, 'o3') ||
-                str_starts_with($id, 'chatgpt-')
+                str_starts_with((string) $id, 'gpt-') ||
+                str_starts_with((string) $id, 'o1') ||
+                str_starts_with((string) $id, 'o3') ||
+                str_starts_with((string) $id, 'chatgpt-')
             ) {
                 $models[] = ['value' => $id, 'label' => $id];
             }
         }
 
-        usort($models, fn($a, $b) => strcmp($a['value'], $b['value']));
+        usort($models, fn(array $a, array $b): int => strcmp((string) $a['value'], (string) $b['value']));
         return $models;
     }
 
@@ -87,7 +87,7 @@ class Maho_Ai_Model_Platform_ModelFetcher
     private function fetchAnthropic(): array
     {
         $apiKey = $this->getEncryptedConfig('maho_ai/general/anthropic_api_key');
-        if (!$apiKey) {
+        if ($apiKey === '' || $apiKey === '0') {
             throw new Mage_Core_Exception('Anthropic API key is not configured.');
         }
 
@@ -104,13 +104,13 @@ class Maho_Ai_Model_Platform_ModelFetcher
         $models = [];
         foreach ($data['data'] ?? [] as $model) {
             $id = $model['id'];
-            if (str_contains($id, 'claude')) {
+            if (str_contains((string) $id, 'claude')) {
                 $models[] = ['value' => $id, 'label' => $model['display_name'] ?? $id];
             }
         }
 
         // Most recent first (Anthropic returns them sorted already, but ensure it)
-        usort($models, fn($a, $b) => strcmp($b['value'], $a['value']));
+        usort($models, fn(array $a, array $b): int => strcmp((string) $b['value'], (string) $a['value']));
         return $models;
     }
 
@@ -120,14 +120,14 @@ class Maho_Ai_Model_Platform_ModelFetcher
     private function fetchGoogle(): array
     {
         $apiKey = $this->getEncryptedConfig('maho_ai/general/google_api_key');
-        if (!$apiKey) {
+        if ($apiKey === '' || $apiKey === '0') {
             throw new Mage_Core_Exception('Google AI API key is not configured.');
         }
 
         $client = HttpClient::create();
         $response = $client->request(
             'GET',
-            "https://generativelanguage.googleapis.com/v1beta/models?key={$apiKey}",
+            'https://generativelanguage.googleapis.com/v1beta/models?key=' . $apiKey,
             ['timeout' => 10],
         );
 
@@ -138,12 +138,13 @@ class Maho_Ai_Model_Platform_ModelFetcher
             if (!in_array('generateContent', $methods)) {
                 continue;
             }
+
             // Strip "models/" prefix from name
             $id = str_replace('models/', '', $model['name']);
             $models[] = ['value' => $id, 'label' => $model['displayName'] ?? $id];
         }
 
-        usort($models, fn($a, $b) => strcmp($a['value'], $b['value']));
+        usort($models, fn(array $a, array $b): int => strcmp((string) $a['value'], (string) $b['value']));
         return $models;
     }
 
@@ -153,13 +154,13 @@ class Maho_Ai_Model_Platform_ModelFetcher
     private function fetchMistral(): array
     {
         $apiKey = $this->getEncryptedConfig('maho_ai/general/mistral_api_key');
-        if (!$apiKey) {
+        if ($apiKey === '' || $apiKey === '0') {
             throw new Mage_Core_Exception('Mistral API key is not configured.');
         }
 
         $client = HttpClient::create();
         $response = $client->request('GET', 'https://api.mistral.ai/v1/models', [
-            'headers' => ['Authorization' => "Bearer {$apiKey}"],
+            'headers' => ['Authorization' => 'Bearer ' . $apiKey],
             'timeout' => 10,
         ]);
 
@@ -168,13 +169,14 @@ class Maho_Ai_Model_Platform_ModelFetcher
         foreach ($data['data'] ?? [] as $model) {
             $id = $model['id'];
             // Skip embedding models
-            if (str_contains($id, 'embed')) {
+            if (str_contains((string) $id, 'embed')) {
                 continue;
             }
+
             $models[] = ['value' => $id, 'label' => $id];
         }
 
-        usort($models, fn($a, $b) => strcmp($a['value'], $b['value']));
+        usort($models, fn(array $a, array $b): int => strcmp((string) $a['value'], (string) $b['value']));
         return $models;
     }
 
@@ -196,7 +198,7 @@ class Maho_Ai_Model_Platform_ModelFetcher
             $models[] = ['value' => $id, 'label' => $name];
         }
 
-        usort($models, fn($a, $b) => strcmp($a['value'], $b['value']));
+        usort($models, fn(array $a, array $b): int => strcmp((string) $a['value'], (string) $b['value']));
         return $models;
     }
 
@@ -209,7 +211,7 @@ class Maho_Ai_Model_Platform_ModelFetcher
         $baseUrl = rtrim($baseUrl, '/');
 
         $client = HttpClient::create();
-        $response = $client->request('GET', "{$baseUrl}/api/tags", ['timeout' => 5]);
+        $response = $client->request('GET', $baseUrl . '/api/tags', ['timeout' => 5]);
 
         $data = $response->toArray();
         $models = [];
@@ -218,7 +220,7 @@ class Maho_Ai_Model_Platform_ModelFetcher
             $models[] = ['value' => $id, 'label' => $id];
         }
 
-        usort($models, fn($a, $b) => strcmp($a['value'], $b['value']));
+        usort($models, fn(array $a, array $b): int => strcmp((string) $a['value'], (string) $b['value']));
         return $models;
     }
 
@@ -231,8 +233,8 @@ class Maho_Ai_Model_Platform_ModelFetcher
     private function fetchFromRegistry(string $provider, string $capability): array
     {
         $config = Maho_Ai_Model_Platform::getProviderConfig($provider);
-        if (!$config) {
-            throw new Mage_Core_Exception("Unknown AI platform: {$provider}");
+        if (!$config instanceof \Maho\Simplexml\Element) {
+            throw new Mage_Core_Exception('Unknown AI platform: ' . $provider);
         }
 
         // Built-in providers can use model_fetcher_method (mirrors factory_method pattern)
@@ -243,14 +245,14 @@ class Maho_Ai_Model_Platform_ModelFetcher
 
         // Community providers use model_fetcher_class
         $fetcherClass = (string) ($config->model_fetcher_class ?? '');
-        if (!$fetcherClass) {
-            throw new Mage_Core_Exception("No model fetcher for provider: {$provider}");
+        if ($fetcherClass === '' || $fetcherClass === '0') {
+            throw new Mage_Core_Exception('No model fetcher for provider: ' . $provider);
         }
 
         $fetcher = new $fetcherClass();
         if (!($fetcher instanceof Maho_Ai_Model_Platform_ModelFetcherInterface)) {
             throw new Mage_Core_Exception(
-                "Model fetcher '{$fetcherClass}' must implement ModelFetcherInterface.",
+                sprintf("Model fetcher '%s' must implement ModelFetcherInterface.", $fetcherClass),
             );
         }
 

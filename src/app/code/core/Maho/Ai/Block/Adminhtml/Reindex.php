@@ -36,7 +36,7 @@ class Maho_Ai_Block_Adminhtml_Reindex extends Mage_Adminhtml_Block_Widget
     public function getEmbedModel(): string
     {
         $platform = Mage::getStoreConfig('maho_ai/embed/default_platform');
-        return (string) Mage::getStoreConfig("maho_ai/embed/{$platform}_model") ?: '—';
+        return (string) Mage::getStoreConfig(sprintf('maho_ai/embed/%s_model', $platform)) ?: '—';
     }
 
     public function getProductCount(): int

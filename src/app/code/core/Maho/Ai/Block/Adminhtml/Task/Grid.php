@@ -70,7 +70,7 @@ class Maho_Ai_Block_Adminhtml_Task_Grid extends Mage_Adminhtml_Block_Widget_Grid
                 Maho_Ai_Model_Task::STATUS_FAILED     => $helper->__('Failed'),
                 Maho_Ai_Model_Task::STATUS_CANCELLED  => $helper->__('Cancelled'),
             ],
-            'frame_callback' => [$this, 'decorateStatus'],
+            'frame_callback' => $this->decorateStatus(...),
         ]);
 
         $this->addColumn('priority', [

@@ -16,12 +16,12 @@ class Maho_Ai_Model_Safety_OutputSanitizer
     /**
      * Tags that are never allowed in AI output
      */
-    private const FORBIDDEN_TAGS = ['script', 'iframe', 'object', 'embed', 'form', 'base', 'link', 'meta', 'style'];
+    private const array FORBIDDEN_TAGS = ['script', 'iframe', 'object', 'embed', 'form', 'base', 'link', 'meta', 'style'];
 
     /**
      * PII patterns — detects but doesn't block
      */
-    private const PII_PATTERNS = [
+    private const array PII_PATTERNS = [
         'email'   => '/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/',
         'phone'   => '/\+?[\d\s\-\(\)]{10,}/',
         'ssn'     => '/\b\d{3}[-\s]?\d{2}[-\s]?\d{4}\b/',
@@ -48,23 +48,23 @@ class Maho_Ai_Model_Safety_OutputSanitizer
     {
         // Strip forbidden tags entirely (including content for script)
         $html = preg_replace('/<script\b[^>]*>.*?<\/script>/is', '', $html);
-        $html = preg_replace('/<style\b[^>]*>.*?<\/style>/is', '', $html);
+        $html = preg_replace('/<style\b[^>]*>.*?<\/style>/is', '', (string) $html);
 
         foreach (self::FORBIDDEN_TAGS as $tag) {
-            $html = preg_replace("/<{$tag}(\s[^>]*)?\/?>/i", '', $html);
-            $html = preg_replace("/<\/{$tag}>/i", '', $html);
+            $html = preg_replace(sprintf('/<%s(\s[^>]*)?\/?>/i', $tag), '', (string) $html);
+            $html = preg_replace(sprintf('/<\/%s>/i', $tag), '', (string) $html);
         }
 
         // Remove on* event handlers (onclick, onerror, onload, etc.)
-        $html = preg_replace('/\s+on[a-z]+\s*=\s*["\'][^"\']*["\']/i', '', $html);
-        $html = preg_replace('/\s+on[a-z]+\s*=\s*[^\s>]+/i', '', $html);
+        $html = preg_replace('/\s+on[a-z]+\s*=\s*["\'][^"\']*["\']/i', '', (string) $html);
+        $html = preg_replace('/\s+on[a-z]+\s*=\s*[^\s>]+/i', '', (string) $html);
 
         // Remove javascript: URLs
-        $html = preg_replace('/href\s*=\s*["\']?\s*javascript:/i', 'href="javascript:void(0)"', $html);
-        $html = preg_replace('/src\s*=\s*["\']?\s*javascript:/i', 'src=""', $html);
+        $html = preg_replace('/href\s*=\s*["\']?\s*javascript:/i', 'href="javascript:void(0)"', (string) $html);
+        $html = preg_replace('/src\s*=\s*["\']?\s*javascript:/i', 'src=""', (string) $html);
 
         // Remove data: URLs in src attributes (potential XSS vector)
-        $html = preg_replace('/src\s*=\s*["\']?\s*data:/i', 'src=""', $html);
+        $html = preg_replace('/src\s*=\s*["\']?\s*data:/i', 'src=""', (string) $html);
 
         return $html;
     }
@@ -78,7 +78,7 @@ class Maho_Ai_Model_Safety_OutputSanitizer
             }
         }
 
-        if ($foundTypes) {
+        if ($foundTypes !== []) {
             $metadata['pii_flagged'] = true;
             $metadata['pii_types'] = $foundTypes;
             Mage::log(
