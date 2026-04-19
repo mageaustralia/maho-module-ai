@@ -47,7 +47,12 @@ class Maho_Ai_Model_TaskRunner
     }
 
     /**
-     * Aggregate completed task usage into the daily usage table
+     * Aggregate completed task usage into the daily usage table.
+     *
+     * Idempotent: deletes yesterday's existing rollup before reinserting, so
+     * running the cron twice on the same day doesn't double-count. Uses the
+     * query builder + insertMultiple to stay portable across MySQL/Postgres/SQLite
+     * (no ON DUPLICATE KEY UPDATE).
      */
     public function aggregateUsage(): void
     {
@@ -55,33 +60,39 @@ class Maho_Ai_Model_TaskRunner
         $taskTable  = Mage::getSingleton('core/resource')->getTableName('ai/task');
         $usageTable = Mage::getSingleton('core/resource')->getTableName('ai/usage');
 
-        // Aggregate yesterday's completed tasks into usage
         $yesterday = date('Y-m-d', strtotime('-1 day'));
 
-        $connection->query("
-            INSERT INTO {$usageTable}
-                (consumer, platform, model, store_id, period_date, request_count, input_tokens, output_tokens, estimated_cost)
-            SELECT
-                consumer,
-                platform,
-                model,
-                store_id,
-                DATE(completed_at) as period_date,
-                COUNT(*) as request_count,
-                SUM(input_tokens) as input_tokens,
-                SUM(output_tokens) as output_tokens,
-                SUM(estimated_cost) as estimated_cost
-            FROM {$taskTable}
-            WHERE status = 'complete'
-                AND DATE(completed_at) = '{$yesterday}'
-                AND platform IS NOT NULL
-            GROUP BY consumer, platform, model, store_id, DATE(completed_at)
-            ON DUPLICATE KEY UPDATE
-                request_count  = request_count + VALUES(request_count),
-                input_tokens   = input_tokens + VALUES(input_tokens),
-                output_tokens  = output_tokens + VALUES(output_tokens),
-                estimated_cost = estimated_cost + VALUES(estimated_cost)
-        ");
+        $select = $connection->select()
+            ->from($taskTable, [
+                'consumer',
+                'platform',
+                'model',
+                'store_id',
+                'period_date'    => new \Maho\Db\Expr('DATE(completed_at)'),
+                'request_count'  => new \Maho\Db\Expr('COUNT(*)'),
+                'input_tokens'   => new \Maho\Db\Expr('SUM(input_tokens)'),
+                'output_tokens'  => new \Maho\Db\Expr('SUM(output_tokens)'),
+                'estimated_cost' => new \Maho\Db\Expr('SUM(estimated_cost)'),
+            ])
+            ->where('status = ?', Maho_Ai_Model_Task::STATUS_COMPLETE)
+            ->where('DATE(completed_at) = ?', $yesterday)
+            ->where('platform IS NOT NULL')
+            ->group(['consumer', 'platform', 'model', 'store_id', new \Maho\Db\Expr('DATE(completed_at)')]);
+
+        $rows = $connection->fetchAll($select);
+        if ($rows === []) {
+            return;
+        }
+
+        $connection->beginTransaction();
+        try {
+            $connection->delete($usageTable, ['period_date = ?' => $yesterday]);
+            $connection->insertMultiple($usageTable, $rows);
+            $connection->commit();
+        } catch (\Throwable $throwable) {
+            $connection->rollBack();
+            throw $throwable;
+        }
     }
 
     /**
