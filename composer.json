@@ -1,0 +1,28 @@
+{
+    "name": "mageaustralia/maho-module-ai",
+    "description": "Core Maho AI platform — multi-provider LLM, async queue, safety guardrails",
+    "type": "maho-module",
+    "license": "OSL-3.0",
+    "homepage": "https://github.com/mageaustralia/maho-module-ai",
+    "authors": [
+        {
+            "name": "Mage Australia",
+            "email": "dev@mageaustralia.com.au",
+            "homepage": "https://mageaustralia.com.au"
+        }
+    ],
+    "require": {
+        "php": ">=8.3",
+        "mahocommerce/maho": ">=26.3"
+    },
+    "autoload": {
+        "psr-0": {
+            "Maho_Ai_": "src/app/code/core/"
+        }
+    },
+    "extra": {
+        "map": [
+        ["src/app/code/core/Maho/Ai", "app/code/core/Maho/Ai"],["src/app/etc/modules/Maho_Ai.xml", "app/etc/modules/Maho_Ai.xml"],["src/app/design/adminhtml/default/default", "app/design/adminhtml/default/default"],["src/app/locale/en_US/Maho_Ai.csv", "app/locale/en_US/Maho_Ai.csv"],["src/skin/adminhtml/default/default", "skin/adminhtml/default/default"]
+        ]
+    }
+}
