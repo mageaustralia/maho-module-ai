@@ -34,11 +34,13 @@ class Maho_Ai_Adminhtml_AiController extends Mage_Adminhtml_Controller_Action
         return $this;
     }
 
+    #[\Maho\Config\Route('/admin/ai/dashboard')]
     public function dashboardAction(): void
     {
         $this->_redirect('*/system_config/edit', ['section' => 'maho_ai']);
     }
 
+    #[\Maho\Config\Route('/admin/ai/tasks')]
     public function tasksAction(): void
     {
         $this->_title(Mage::helper('ai')->__('AI Task History'));
@@ -50,6 +52,7 @@ class Maho_Ai_Adminhtml_AiController extends Mage_Adminhtml_Controller_Action
         $this->renderLayout();
     }
 
+    #[\Maho\Config\Route('/admin/ai/view')]
     public function viewAction(): void
     {
         $id   = (int) $this->getRequest()->getParam('id');
@@ -77,6 +80,7 @@ class Maho_Ai_Adminhtml_AiController extends Mage_Adminhtml_Controller_Action
         $this->renderLayout();
     }
 
+    #[\Maho\Config\Route('/admin/ai/reindex')]
     public function reindexAction(): void
     {
         $this->_title(Mage::helper('ai')->__('Queue All Embeddings'));
@@ -88,6 +92,7 @@ class Maho_Ai_Adminhtml_AiController extends Mage_Adminhtml_Controller_Action
         $this->renderLayout();
     }
 
+    #[\Maho\Config\Route('/admin/ai/reindexPost')]
     public function reindexPostAction(): void
     {
         $types   = (array) $this->getRequest()->getPost('types', []);
@@ -121,6 +126,7 @@ class Maho_Ai_Adminhtml_AiController extends Mage_Adminhtml_Controller_Action
      * the JS side uses mahoFetch() which auto-sends form_key on POST.
      * Provider is implicitly whitelisted by fetchForProvider()'s match() statement.
      */
+    #[\Maho\Config\Route('/admin/ai/fetchModels')]
     public function fetchModelsAction(): void
     {
         $this->getResponse()->setHeader('Content-Type', 'application/json');
