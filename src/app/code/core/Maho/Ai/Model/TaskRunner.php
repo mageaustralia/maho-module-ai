@@ -283,15 +283,18 @@ class Maho_Ai_Model_TaskRunner
         $cutoff     = date('Y-m-d H:i:s', time() - $timeoutSeconds);
 
         // Re-queue timed-out tasks (they'll be retried up to max_retries)
-        $connection->query("
-            UPDATE {$taskTable}
-            SET
-                status = CASE WHEN retries >= max_retries THEN 'failed' ELSE 'pending' END,
-                retries = retries + 1,
-                error_message = 'Task timed out',
-                completed_at = CASE WHEN retries >= max_retries THEN NOW() ELSE NULL END
-            WHERE status = 'processing'
-                AND started_at < '{$cutoff}'
-        ");
+        $connection->update(
+            $taskTable,
+            [
+                'status'        => new \Maho\Db\Expr("CASE WHEN retries >= max_retries THEN 'failed' ELSE 'pending' END"),
+                'retries'       => new \Maho\Db\Expr('retries + 1'),
+                'error_message' => 'Task timed out',
+                'completed_at'  => new \Maho\Db\Expr('CASE WHEN retries >= max_retries THEN NOW() ELSE NULL END'),
+            ],
+            [
+                'status = ?'     => 'processing',
+                'started_at < ?' => $cutoff,
+            ],
+        );
     }
 }
