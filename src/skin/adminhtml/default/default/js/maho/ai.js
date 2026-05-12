@@ -1,4 +1,10 @@
-/* Maho_Ai — adminhtml JS */
+/**
+ * Maho
+ *
+ * @package    Maho_Ai
+ * @copyright  Copyright (c) 2026 Maho (https://mahocommerce.com)
+ * @license    https://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ */
 
 mahoOnReady(function () {
     // Confirm-on-click for forms that opt in via data-maho-confirm
