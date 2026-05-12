@@ -30,22 +30,28 @@ class Maho_Ai_Model_Platform_Symfony implements
     Maho_Ai_Model_Platform_EmbedProviderInterface,
     Maho_Ai_Model_Platform_ImageProviderInterface
 {
-    private string $lastModel = '';
+    protected string $lastModel = '';
     /** @var array{input: int, output: int} */
-    private array $lastTokenUsage = ['input' => 0, 'output' => 0];
+    protected array $lastTokenUsage = ['input' => 0, 'output' => 0];
 
-    private string $lastEmbedModel = '';
+    protected string $lastEmbedModel = '';
     /** @var array{input: int} */
-    private array $lastEmbedTokenUsage = ['input' => 0];
+    protected array $lastEmbedTokenUsage = ['input' => 0];
 
-    private string $lastImageModel = '';
+    protected string $lastImageModel = '';
 
+    /**
+     * Subclasses should instantiate the appropriate Symfony AI Platform
+     * bridge (e.g. for a custom OpenAI-compatible host) and pass it as
+     * $platform. The five readonly fields stay protected so subclasses
+     * can read defaults / platform code without re-declaring them.
+     */
     public function __construct(
-        private readonly PlatformInterface $platform,
-        private readonly string $platformCode,
-        private readonly string $defaultChatModel = '',
-        private readonly string $defaultEmbedModel = '',
-        private readonly string $defaultImageModel = '',
+        protected readonly PlatformInterface $platform,
+        protected readonly string $platformCode,
+        protected readonly string $defaultChatModel = '',
+        protected readonly string $defaultEmbedModel = '',
+        protected readonly string $defaultImageModel = '',
     ) {}
 
     // ─── ProviderInterface (chat) ───────────────────────────────────────────
@@ -384,7 +390,7 @@ class Maho_Ai_Model_Platform_Symfony implements
     // ─── Helpers ────────────────────────────────────────────────────────────
 
     /** @param array<array{role: string, content: string}> $messages */
-    private function buildMessageBag(array $messages): MessageBag
+    protected function buildMessageBag(array $messages): MessageBag
     {
         $bag = new MessageBag();
         foreach ($messages as $m) {
@@ -400,7 +406,7 @@ class Maho_Ai_Model_Platform_Symfony implements
     }
 
     /** @param array<string, mixed> $options @return array<string, mixed> */
-    private function mapChatOptions(array $options): array
+    protected function mapChatOptions(array $options): array
     {
         $out = [];
         if (isset($options['temperature'])) {
@@ -417,7 +423,7 @@ class Maho_Ai_Model_Platform_Symfony implements
     }
 
     /** @param array<string, mixed> $options @return array<string, mixed> */
-    private function mapEmbedOptions(array $options): array
+    protected function mapEmbedOptions(array $options): array
     {
         $out = [];
         if (isset($options['dimensions'])) {
@@ -427,7 +433,7 @@ class Maho_Ai_Model_Platform_Symfony implements
     }
 
     /** @param array<string, mixed> $options @return array<string, mixed> */
-    private function mapImageOptions(array $options): array
+    protected function mapImageOptions(array $options): array
     {
         $out = [];
         if (isset($options['width'], $options['height'])) {
@@ -442,7 +448,7 @@ class Maho_Ai_Model_Platform_Symfony implements
         return $out;
     }
 
-    private function captureChatMetadata(DeferredResult $deferred, string $model): void
+    protected function captureChatMetadata(DeferredResult $deferred, string $model): void
     {
         $this->lastModel = $model;
         $this->lastTokenUsage = ['input' => 0, 'output' => 0];
@@ -455,7 +461,7 @@ class Maho_Ai_Model_Platform_Symfony implements
         }
     }
 
-    private function extractTokenUsage(DeferredResult $deferred): ?TokenUsage
+    protected function extractTokenUsage(DeferredResult $deferred): ?TokenUsage
     {
         try {
             $metadata = $deferred->getResult()->getMetadata();
