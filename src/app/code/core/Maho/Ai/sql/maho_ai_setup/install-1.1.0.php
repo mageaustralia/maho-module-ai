@@ -180,9 +180,9 @@ $table = $connection->newTable($this->getTable('ai/usage'))
         'default'  => '0.000000',
     ], 'Estimated cost in USD')
     ->addIndex(
-        $this->getIdxName('ai/usage', ['consumer', 'platform', 'model', 'store_id', 'period_date'], Varien_Db_Adapter_Interface::INDEX_TYPE_UNIQUE),
+        $this->getIdxName('ai/usage', ['consumer', 'platform', 'model', 'store_id', 'period_date'], \Maho\Db\Adapter\AdapterInterface::INDEX_TYPE_UNIQUE),
         ['consumer', 'platform', 'model', 'store_id', 'period_date'],
-        ['type' => Varien_Db_Adapter_Interface::INDEX_TYPE_UNIQUE],
+        ['type' => \Maho\Db\Adapter\AdapterInterface::INDEX_TYPE_UNIQUE],
     )
     ->setComment('Maho AI Daily Usage Aggregation');
 
@@ -236,9 +236,9 @@ $table = $connection->newTable($this->getTable('ai/vector'))
         'default'  => Maho\Db\Ddl\Table::TIMESTAMP_INIT,
     ], 'Updated At')
     ->addIndex(
-        $this->getIdxName('ai/vector', ['entity_type', 'entity_id', 'store_id'], Varien_Db_Adapter_Interface::INDEX_TYPE_UNIQUE),
+        $this->getIdxName('ai/vector', ['entity_type', 'entity_id', 'store_id'], \Maho\Db\Adapter\AdapterInterface::INDEX_TYPE_UNIQUE),
         ['entity_type', 'entity_id', 'store_id'],
-        ['type' => Varien_Db_Adapter_Interface::INDEX_TYPE_UNIQUE],
+        ['type' => \Maho\Db\Adapter\AdapterInterface::INDEX_TYPE_UNIQUE],
     )
     ->addIndex(
         $this->getIdxName('ai/vector', ['entity_type', 'entity_id']),

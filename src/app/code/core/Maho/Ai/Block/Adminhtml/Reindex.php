@@ -79,6 +79,7 @@ class Maho_Ai_Block_Adminhtml_Reindex extends Mage_Adminhtml_Block_Widget
         return (int) ceil($taskCount / max(0.01, $tasksPerMinute));
     }
 
+    #[\Override]
     public function getFormKey(): string
     {
         return Mage::getSingleton('core/session')->getFormKey();

@@ -13,7 +13,7 @@ declare(strict_types=1);
 class Maho_Ai_Block_Adminhtml_System_Config_Form_Field_ModelSelect extends Mage_Adminhtml_Block_System_Config_Form_Field
 {
     #[\Override]
-    protected function _getElementHtml(Varien_Data_Form_Element_Abstract $element): string
+    protected function _getElementHtml(\Maho\Data\Form\Element\AbstractElement $element): string
     {
         $html = parent::_getElementHtml($element);
 

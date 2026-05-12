@@ -38,21 +38,21 @@ $connection = $installer->getConnection();
 $table      = $installer->getTable('ai/task');
 
 $connection->modifyColumn($table, 'context', [
-    'type'     => Varien_Db_Ddl_Table::TYPE_TEXT,
+    'type'     => \Maho\Db\Ddl\Table::TYPE_TEXT,
     'length'   => '16M',
     'nullable' => true,
     'comment'  => 'JSON-encoded task context (options, callback hints, source images, ...)',
 ]);
 
 $connection->modifyColumn($table, 'messages', [
-    'type'     => Varien_Db_Ddl_Table::TYPE_TEXT,
+    'type'     => \Maho\Db\Ddl\Table::TYPE_TEXT,
     'length'   => '16M',
     'nullable' => true,
     'comment'  => 'JSON-encoded chat-style messages array',
 ]);
 
 $connection->modifyColumn($table, 'response', [
-    'type'     => Varien_Db_Ddl_Table::TYPE_TEXT,
+    'type'     => \Maho\Db\Ddl\Table::TYPE_TEXT,
     'length'   => '16M',
     'nullable' => true,
     'comment'  => 'Model output: completion text, image URL/data, or embedding JSON',
