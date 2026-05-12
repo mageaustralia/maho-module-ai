@@ -357,7 +357,7 @@ class Maho_Ai_Helper_Data extends Mage_Core_Helper_Abstract
         $pattern = (string) Mage::getStoreConfig('maho_ai/image/placeholder_url', $storeId)
             ?: 'https://placehold.co/{w}x{h}';
 
-        return str_replace(['{w}', '{h}'], [$w, $h], $pattern);
+        return str_replace(['{w}', '{h}'], [(string) $w, (string) $h], $pattern);
     }
 
     public function isEnabled(?int $storeId = null): bool

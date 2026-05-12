@@ -37,25 +37,39 @@ $installer->startSetup();
 $connection = $installer->getConnection();
 $table      = $installer->getTable('ai/task');
 
-$connection->modifyColumn($table, 'context', [
-    'type'     => \Maho\Db\Ddl\Table::TYPE_TEXT,
-    'length'   => '16M',
-    'nullable' => true,
-    'comment'  => 'JSON-encoded task context (options, callback hints, source images, ...)',
-]);
+// Widen context / messages / response to MEDIUMTEXT (16M) for long-form
+// completions. MySQL's default TEXT caps at 64KB which trims responses
+// past ~16k tokens.
+//
+// PostgreSQL's TEXT is already unlimited (1GB practical max), so the
+// widening is a no-op there. Worse, asking Maho's PG adapter to
+// "modify a TEXT column to length 16M" translates to
+// ALTER COLUMN ... TYPE VARCHAR(16777216), which exceeds PG's 10MB
+// varchar ceiling and errors. Gate the modifyColumn calls to MySQL only.
+$driver  = (string) $connection->getDriverName();
+$isMysql = str_contains(strtolower($driver), 'mysql');
 
-$connection->modifyColumn($table, 'messages', [
-    'type'     => \Maho\Db\Ddl\Table::TYPE_TEXT,
-    'length'   => '16M',
-    'nullable' => true,
-    'comment'  => 'JSON-encoded chat-style messages array',
-]);
+if ($isMysql) {
+    $connection->modifyColumn($table, 'context', [
+        'type'     => \Maho\Db\Ddl\Table::TYPE_TEXT,
+        'length'   => '16M',
+        'nullable' => true,
+        'comment'  => 'JSON-encoded task context (options, callback hints, source images, ...)',
+    ]);
 
-$connection->modifyColumn($table, 'response', [
-    'type'     => \Maho\Db\Ddl\Table::TYPE_TEXT,
-    'length'   => '16M',
-    'nullable' => true,
-    'comment'  => 'Model output: completion text, image URL/data, or embedding JSON',
-]);
+    $connection->modifyColumn($table, 'messages', [
+        'type'     => \Maho\Db\Ddl\Table::TYPE_TEXT,
+        'length'   => '16M',
+        'nullable' => true,
+        'comment'  => 'JSON-encoded chat-style messages array',
+    ]);
+
+    $connection->modifyColumn($table, 'response', [
+        'type'     => \Maho\Db\Ddl\Table::TYPE_TEXT,
+        'length'   => '16M',
+        'nullable' => true,
+        'comment'  => 'Model output: completion text, image URL/data, or embedding JSON',
+    ]);
+}
 
 $installer->endSetup();
