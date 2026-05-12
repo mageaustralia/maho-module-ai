@@ -126,18 +126,6 @@
         </layout>
     </adminhtml>
 
-    <admin>
-        <routers>
-            <adminhtml>
-                <args>
-                    <modules>
-                        <maho_ai before="Mage_Adminhtml">Maho_Ai_Adminhtml</maho_ai>
-                    </modules>
-                </args>
-            </adminhtml>
-        </routers>
-    </admin>
-
     <default>
         <maho_ai>
             <general>
