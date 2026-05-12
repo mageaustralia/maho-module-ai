@@ -2,7 +2,7 @@
 <config>
     <modules>
         <Maho_Ai>
-            <version>1.1.0</version>
+            <version>1.1.1</version>
         </Maho_Ai>
     </modules>
 
@@ -111,37 +111,9 @@
                 </generic>
             </providers>
         </ai>
-
-        <events>
-            <catalog_product_save_after>
-                <observers>
-                    <maho_ai_product_embed>
-                        <type>singleton</type>
-                        <class>ai/observer</class>
-                        <method>onProductSave</method>
-                    </maho_ai_product_embed>
-                </observers>
-            </catalog_product_save_after>
-            <catalog_category_save_after>
-                <observers>
-                    <maho_ai_category_embed>
-                        <type>singleton</type>
-                        <class>ai/observer</class>
-                        <method>onCategorySave</method>
-                    </maho_ai_category_embed>
-                </observers>
-            </catalog_category_save_after>
-        </events>
     </global>
 
     <adminhtml>
-        <layout>
-            <updates>
-                <maho_ai>
-                    <file>maho_ai.xml</file>
-                </maho_ai>
-            </updates>
-        </layout>
         <translate>
             <modules>
                 <Maho_Ai>
@@ -151,6 +123,13 @@
                 </Maho_Ai>
             </modules>
         </translate>
+        <layout>
+            <updates>
+                <maho_ai>
+                    <file>maho_ai.xml</file>
+                </maho_ai>
+            </updates>
+        </layout>
     </adminhtml>
 
     <admin>
@@ -164,35 +143,6 @@
             </adminhtml>
         </routers>
     </admin>
-
-    <crontab>
-        <jobs>
-            <maho_ai_process_queue>
-                <schedule>
-                    <config_path>maho_ai/queue/cron_schedule</config_path>
-                </schedule>
-                <run>
-                    <model>ai/taskRunner::processQueue</model>
-                </run>
-            </maho_ai_process_queue>
-            <maho_ai_aggregate_usage>
-                <schedule>
-                    <cron_expr>5 0 * * *</cron_expr>
-                </schedule>
-                <run>
-                    <model>ai/taskRunner::aggregateUsage</model>
-                </run>
-            </maho_ai_aggregate_usage>
-            <maho_ai_cleanup_old_tasks>
-                <schedule>
-                    <cron_expr>0 3 * * 0</cron_expr>
-                </schedule>
-                <run>
-                    <model>ai/taskRunner::cleanupOldTasks</model>
-                </run>
-            </maho_ai_cleanup_old_tasks>
-        </jobs>
-    </crontab>
 
     <default>
         <maho_ai>

@@ -13,12 +13,15 @@ declare(strict_types=1);
 
 class Maho_Ai_Adminhtml_AiController extends Mage_Adminhtml_Controller_Action
 {
-    public const ADMIN_RESOURCE = 'system/maho_ai';
+    public const ADMIN_RESOURCE = 'system/config';
+
+    /** Skip secret key validation for AJAX — session cookie + ACL is sufficient. */
+    protected $_publicActions = ['fetchModels', 'taskStatus'];
 
     #[\Override]
     public function preDispatch(): static
     {
-        $this->_setForcedFormKeyActions(['reindexPost', 'fetchModels']);
+        $this->_setForcedFormKeyActions(['reindexPost']);
         return parent::preDispatch();
     }
 
@@ -34,13 +37,13 @@ class Maho_Ai_Adminhtml_AiController extends Mage_Adminhtml_Controller_Action
         return $this;
     }
 
-    #[\Maho\Config\Route('/admin/ai/dashboard')]
+    #[Maho\Config\Route('/admin/ai/dashboard')]
     public function dashboardAction(): void
     {
         $this->_redirect('*/system_config/edit', ['section' => 'maho_ai']);
     }
 
-    #[\Maho\Config\Route('/admin/ai/tasks')]
+    #[Maho\Config\Route('/admin/ai/tasks')]
     public function tasksAction(): void
     {
         $this->_title(Mage::helper('ai')->__('AI Task History'));
@@ -52,7 +55,7 @@ class Maho_Ai_Adminhtml_AiController extends Mage_Adminhtml_Controller_Action
         $this->renderLayout();
     }
 
-    #[\Maho\Config\Route('/admin/ai/view')]
+    #[Maho\Config\Route('/admin/ai/view')]
     public function viewAction(): void
     {
         $id   = (int) $this->getRequest()->getParam('id');
@@ -80,7 +83,63 @@ class Maho_Ai_Adminhtml_AiController extends Mage_Adminhtml_Controller_Action
         $this->renderLayout();
     }
 
-    #[\Maho\Config\Route('/admin/ai/reindex')]
+    /**
+     * JSON endpoint for polling task status — used by frontends that submit
+     * an async AI task and want to display progress to the user without
+     * blocking the originating HTTP request (Cloudflare's 60s edge timeout
+     * is the typical motivator). Pair with submitImageTask() / submitTask()
+     * + processTask() in the submitting controller.
+     *
+     * Returns: {task_id, status, task_type, response, error_message, completed_at}.
+     * `response` is only populated when status is 'complete'; for image tasks,
+     * it is the generated image URL.
+     */
+    #[Maho\Config\Route('/admin/ai/task_status')]
+    public function taskStatusAction(): void
+    {
+        $this->getResponse()->setHeader('Content-Type', 'application/json');
+
+        $id = (int) $this->getRequest()->getParam('id');
+        if ($id <= 0) {
+            $this->getResponse()->setHttpResponseCode(400);
+            $this->getResponse()->setBody(json_encode(['error' => 'Missing or invalid id parameter.']));
+            return;
+        }
+
+        /** @var Maho_Ai_Model_Task $task */
+        $task = Mage::getModel('ai/task')->load($id);
+        if (!$task->getId()) {
+            $this->getResponse()->setHttpResponseCode(404);
+            $this->getResponse()->setBody(json_encode(['error' => 'Task not found.']));
+            return;
+        }
+
+        $status = (string) $task->getData('status');
+        $this->getResponse()->setBody(json_encode([
+            'task_id'       => $id,
+            'status'        => $status,
+            'task_type'     => (string) $task->getData('task_type'),
+            'response'      => $status === Maho_Ai_Model_Task::STATUS_COMPLETE
+                ? (string) $task->getData('response')
+                : null,
+            'error_message' => (string) $task->getData('error_message') ?: null,
+            'completed_at'  => $task->getData('completed_at'),
+        ]));
+    }
+
+    #[Maho\Config\Route('/admin/ai/usage')]
+    public function usageAction(): void
+    {
+        $this->_title(Mage::helper('ai')->__('AI Usage'));
+        $this->_initAction();
+        $this->_addBreadcrumb(
+            Mage::helper('ai')->__('Usage'),
+            Mage::helper('ai')->__('Usage'),
+        );
+        $this->renderLayout();
+    }
+
+    #[Maho\Config\Route('/admin/ai/reindex')]
     public function reindexAction(): void
     {
         $this->_title(Mage::helper('ai')->__('Queue All Embeddings'));
@@ -92,7 +151,7 @@ class Maho_Ai_Adminhtml_AiController extends Mage_Adminhtml_Controller_Action
         $this->renderLayout();
     }
 
-    #[\Maho\Config\Route('/admin/ai/reindexPost')]
+    #[Maho\Config\Route('/admin/ai/reindexPost')]
     public function reindexPostAction(): void
     {
         $types   = (array) $this->getRequest()->getPost('types', []);
@@ -102,7 +161,6 @@ class Maho_Ai_Adminhtml_AiController extends Mage_Adminhtml_Controller_Action
         if (in_array('products', $types)) {
             $queued += $this->_queueEntityType('product', $storeId);
         }
-
         if (in_array('categories', $types)) {
             $queued += $this->_queueEntityType('category', $storeId);
         }
@@ -122,11 +180,11 @@ class Maho_Ai_Adminhtml_AiController extends Mage_Adminhtml_Controller_Action
 
     /**
      * AJAX: fetch available models for a provider and cache in config.
-     * CSRF-protected by _setForcedFormKeyActions(['fetchModels']) in preDispatch —
-     * the JS side uses mahoFetch() which auto-sends form_key on POST.
+     * Listed in $_publicActions to skip URL secret key (incompatible with AJAX).
+     * CSRF is mitigated by ACL (admin session required) and browser same-origin policy.
      * Provider is implicitly whitelisted by fetchForProvider()'s match() statement.
      */
-    #[\Maho\Config\Route('/admin/ai/fetchModels')]
+    #[Maho\Config\Route('/admin/ai/fetchModels')]
     public function fetchModelsAction(): void
     {
         $this->getResponse()->setHeader('Content-Type', 'application/json');
@@ -145,14 +203,14 @@ class Maho_Ai_Adminhtml_AiController extends Mage_Adminhtml_Controller_Action
 
             // Cache result in config so source models can use it
             Mage::getModel('core/config')->saveConfig(
-                'maho_ai/models_cache/' . $provider,
+                "maho_ai/models_cache/{$provider}",
                 json_encode($models),
             );
             Mage::app()->getCache()->cleanType('config');
 
             $this->getResponse()->setBody(json_encode(['models' => $models]));
-        } catch (Exception $exception) {
-            $this->getResponse()->setBody(json_encode(['error' => $exception->getMessage()]));
+        } catch (Exception $e) {
+            $this->getResponse()->setBody(json_encode(['error' => $e->getMessage()]));
         }
     }
 
@@ -179,7 +237,7 @@ class Maho_Ai_Adminhtml_AiController extends Mage_Adminhtml_Controller_Action
         ];
 
         $flush = function () use (&$batch, &$count, $conn, $taskTable): void {
-            if ($batch !== []) {
+            if ($batch) {
                 $conn->insertMultiple($taskTable, $batch);
                 $count += count($batch);
                 $batch = [];
@@ -201,7 +259,6 @@ class Maho_Ai_Adminhtml_AiController extends Mage_Adminhtml_Controller_Action
                     if ($text === '') {
                         continue;
                     }
-
                     $batch[] = $baseRow + [
                         'consumer' => 'catalog_product',
                         'messages' => json_encode([['role' => 'user', 'content' => $text]]),
@@ -211,7 +268,6 @@ class Maho_Ai_Adminhtml_AiController extends Mage_Adminhtml_Controller_Action
                         $flush();
                     }
                 }
-
                 $collection->clear();
             }
         } elseif ($type === 'category') {
@@ -232,7 +288,6 @@ class Maho_Ai_Adminhtml_AiController extends Mage_Adminhtml_Controller_Action
                     if ($text === '') {
                         continue;
                     }
-
                     $batch[] = $baseRow + [
                         'consumer' => 'catalog_category',
                         'messages' => json_encode([['role' => 'user', 'content' => $text]]),
@@ -242,7 +297,6 @@ class Maho_Ai_Adminhtml_AiController extends Mage_Adminhtml_Controller_Action
                         $flush();
                     }
                 }
-
                 $collection->clear();
             }
         }

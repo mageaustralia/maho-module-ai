@@ -30,8 +30,12 @@ class Maho_Ai_Model_Platform_Factory
             Maho_Ai_Model_Platform::OPENROUTER => $this->createOpenRouter($storeId),
             Maho_Ai_Model_Platform::OLLAMA     => $this->createOllama($storeId),
             Maho_Ai_Model_Platform::GENERIC    => $this->createGeneric($storeId),
-            default => $this->createFromRegistry($platformCode, $storeId, 'chat',
-                Maho_Ai_Model_Platform_ProviderInterface::class),
+            default => $this->createFromRegistry(
+                $platformCode,
+                $storeId,
+                'chat',
+                Maho_Ai_Model_Platform_ProviderInterface::class,
+            ),
         };
     }
 
@@ -51,15 +55,21 @@ class Maho_Ai_Model_Platform_Factory
         $platformCode ??= (string) Mage::getStoreConfig('maho_ai/embed/default_platform', $storeId)
             ?: Maho_Ai_Model_Platform::OPENAI;
 
-        return match ($platformCode) {
+        $provider = match ($platformCode) {
             Maho_Ai_Model_Platform::OPENAI   => $this->createOpenAi($storeId),
             Maho_Ai_Model_Platform::GOOGLE   => $this->createGoogle($storeId),
             Maho_Ai_Model_Platform::MISTRAL  => $this->createMistralForEmbed($storeId),
             Maho_Ai_Model_Platform::OLLAMA   => $this->createOllamaForEmbed($storeId),
             Maho_Ai_Model_Platform::GENERIC  => $this->createGenericForEmbed($storeId),
-            default => $this->createFromRegistry($platformCode, $storeId, 'embed',
-                Maho_Ai_Model_Platform_EmbedProviderInterface::class),
+            default => $this->createFromRegistry(
+                $platformCode,
+                $storeId,
+                'embed',
+                Maho_Ai_Model_Platform_EmbedProviderInterface::class,
+            ),
         };
+
+        return $provider;
     }
 
     /**
@@ -72,13 +82,19 @@ class Maho_Ai_Model_Platform_Factory
         $platformCode ??= (string) Mage::getStoreConfig('maho_ai/image/default_platform', $storeId)
             ?: Maho_Ai_Model_Platform::OPENAI;
 
-        return match ($platformCode) {
+        $provider = match ($platformCode) {
             Maho_Ai_Model_Platform::OPENAI  => $this->createOpenAi($storeId),
             Maho_Ai_Model_Platform::GOOGLE  => $this->createGoogle($storeId),
             Maho_Ai_Model_Platform::GENERIC => $this->createGenericForImage($storeId),
-            default => $this->createFromRegistry($platformCode, $storeId, 'image',
-                Maho_Ai_Model_Platform_ImageProviderInterface::class),
+            default => $this->createFromRegistry(
+                $platformCode,
+                $storeId,
+                'image',
+                Maho_Ai_Model_Platform_ImageProviderInterface::class,
+            ),
         };
+
+        return $provider;
     }
 
     private function getConfig(string $path, ?int $storeId = null): string
@@ -94,16 +110,15 @@ class Maho_Ai_Model_Platform_Factory
 
     private function resolveModel(string $platform, ?int $storeId): string
     {
-        return $this->getConfig(sprintf('maho_ai/general/%s_model', $platform), $storeId);
+        return $this->getConfig("maho_ai/general/{$platform}_model", $storeId);
     }
 
     private function createOpenAi(?int $storeId): Maho_Ai_Model_Platform_OpenAi
     {
         $apiKey = $this->getEncryptedConfig('maho_ai/general/openai_api_key', $storeId);
-        if ($apiKey === '' || $apiKey === '0') {
+        if (!$apiKey) {
             throw new Mage_Core_Exception('OpenAI API key is not configured.');
         }
-
         return new Maho_Ai_Model_Platform_OpenAi(
             apiKey: $apiKey,
             defaultModel: $this->resolveModel(Maho_Ai_Model_Platform::OPENAI, $storeId),
@@ -116,10 +131,9 @@ class Maho_Ai_Model_Platform_Factory
     private function createAnthropic(?int $storeId): Maho_Ai_Model_Platform_Anthropic
     {
         $apiKey = $this->getEncryptedConfig('maho_ai/general/anthropic_api_key', $storeId);
-        if ($apiKey === '' || $apiKey === '0') {
+        if (!$apiKey) {
             throw new Mage_Core_Exception('Anthropic API key is not configured.');
         }
-
         return new Maho_Ai_Model_Platform_Anthropic(
             apiKey: $apiKey,
             defaultModel: $this->resolveModel(Maho_Ai_Model_Platform::ANTHROPIC, $storeId),
@@ -129,10 +143,9 @@ class Maho_Ai_Model_Platform_Factory
     private function createGoogle(?int $storeId): Maho_Ai_Model_Platform_Google
     {
         $apiKey = $this->getEncryptedConfig('maho_ai/general/google_api_key', $storeId);
-        if ($apiKey === '' || $apiKey === '0') {
+        if (!$apiKey) {
             throw new Mage_Core_Exception('Google AI API key is not configured.');
         }
-
         return new Maho_Ai_Model_Platform_Google(
             apiKey: $apiKey,
             defaultModel: $this->resolveModel(Maho_Ai_Model_Platform::GOOGLE, $storeId),
@@ -142,10 +155,9 @@ class Maho_Ai_Model_Platform_Factory
     private function createMistral(?int $storeId): Maho_Ai_Model_Platform_Mistral
     {
         $apiKey = $this->getEncryptedConfig('maho_ai/general/mistral_api_key', $storeId);
-        if ($apiKey === '' || $apiKey === '0') {
+        if (!$apiKey) {
             throw new Mage_Core_Exception('Mistral API key is not configured.');
         }
-
         return new Maho_Ai_Model_Platform_Mistral(
             apiKey: $apiKey,
             defaultModel: $this->resolveModel(Maho_Ai_Model_Platform::MISTRAL, $storeId),
@@ -155,10 +167,9 @@ class Maho_Ai_Model_Platform_Factory
     private function createOpenRouter(?int $storeId): Maho_Ai_Model_Platform_OpenRouter
     {
         $apiKey = $this->getEncryptedConfig('maho_ai/general/openrouter_api_key', $storeId);
-        if ($apiKey === '' || $apiKey === '0') {
+        if (!$apiKey) {
             throw new Mage_Core_Exception('OpenRouter API key is not configured.');
         }
-
         return new Maho_Ai_Model_Platform_OpenRouter(
             apiKey: $apiKey,
             defaultModel: $this->resolveModel(Maho_Ai_Model_Platform::OPENROUTER, $storeId),
@@ -177,10 +188,9 @@ class Maho_Ai_Model_Platform_Factory
     private function createGeneric(?int $storeId): Maho_Ai_Model_Platform_Generic
     {
         $baseUrl = $this->getConfig('maho_ai/general/generic_base_url', $storeId);
-        if ($baseUrl === '' || $baseUrl === '0') {
+        if (!$baseUrl) {
             throw new Mage_Core_Exception('Generic provider base URL is not configured.');
         }
-
         return new Maho_Ai_Model_Platform_Generic(
             baseUrl: $baseUrl,
             apiKey: $this->getEncryptedConfig('maho_ai/general/generic_api_key', $storeId),
@@ -195,10 +205,9 @@ class Maho_Ai_Model_Platform_Factory
     private function createMistralForEmbed(?int $storeId): Maho_Ai_Model_Platform_Mistral
     {
         $apiKey = $this->getEncryptedConfig('maho_ai/general/mistral_api_key', $storeId);
-        if ($apiKey === '' || $apiKey === '0') {
+        if (!$apiKey) {
             throw new Mage_Core_Exception('Mistral API key is not configured.');
         }
-
         return new Maho_Ai_Model_Platform_Mistral(
             apiKey: $apiKey,
             defaultModel: $this->getConfig('maho_ai/embed/mistral_model', $storeId) ?: 'mistral-embed',
@@ -218,10 +227,9 @@ class Maho_Ai_Model_Platform_Factory
     {
         $baseUrl = $this->getConfig('maho_ai/embed/generic_base_url', $storeId)
             ?: $this->getConfig('maho_ai/general/generic_base_url', $storeId);
-        if ($baseUrl === '' || $baseUrl === '0') {
+        if (!$baseUrl) {
             throw new Mage_Core_Exception('Generic embed provider base URL is not configured.');
         }
-
         $apiKey = $this->getEncryptedConfig('maho_ai/embed/generic_api_key', $storeId)
             ?: $this->getEncryptedConfig('maho_ai/general/generic_api_key', $storeId);
         return new Maho_Ai_Model_Platform_Generic(
@@ -239,10 +247,9 @@ class Maho_Ai_Model_Platform_Factory
     {
         $baseUrl = $this->getConfig('maho_ai/image/generic_base_url', $storeId)
             ?: $this->getConfig('maho_ai/general/generic_base_url', $storeId);
-        if ($baseUrl === '' || $baseUrl === '0') {
+        if (!$baseUrl) {
             throw new Mage_Core_Exception('Generic image provider base URL is not configured.');
         }
-
         $apiKey = $this->getEncryptedConfig('maho_ai/image/generic_api_key', $storeId)
             ?: $this->getEncryptedConfig('maho_ai/general/generic_api_key', $storeId);
         return new Maho_Ai_Model_Platform_Generic(
@@ -261,16 +268,18 @@ class Maho_Ai_Model_Platform_Factory
     {
         $platformCode ??= (string) Mage::getStoreConfig('maho_ai/video/default_platform', $storeId);
 
-        if ($platformCode === '' || $platformCode === '0') {
+        if (!$platformCode) {
             throw new Mage_Core_Exception('No video provider configured.');
         }
 
-        return $this->createFromRegistry(
+        $provider = $this->createFromRegistry(
             $platformCode,
             $storeId,
             'video',
             Maho_Ai_Model_Platform_VideoProviderInterface::class,
         );
+
+        return $provider;
     }
 
     /**
@@ -287,14 +296,14 @@ class Maho_Ai_Model_Platform_Factory
         string $requiredInterface,
     ): object {
         $config = Maho_Ai_Model_Platform::getProviderConfig($platformCode);
-        if (!$config instanceof \Maho\Simplexml\Element) {
-            throw new Mage_Core_Exception('Unknown AI platform: ' . $platformCode);
+        if (!$config) {
+            throw new Mage_Core_Exception("Unknown AI platform: {$platformCode}");
         }
 
         // Verify capability
-        $capabilities = array_map(trim(...), explode(',', (string) ($config->capabilities ?? '')));
+        $capabilities = array_map('trim', explode(',', (string) ($config->capabilities ?? '')));
         if (!in_array($capability, $capabilities, true)) {
-            throw new Mage_Core_Exception(sprintf("Platform '%s' does not support %s.", $platformCode, $capability));
+            throw new Mage_Core_Exception("Platform '{$platformCode}' does not support {$capability}.");
         }
 
         // Built-in providers can use factory_method to call existing private methods
@@ -308,21 +317,20 @@ class Maho_Ai_Model_Platform_Factory
             $factory = new $factoryClass();
             if (!($factory instanceof Maho_Ai_Model_Platform_ProviderFactoryInterface)) {
                 throw new Mage_Core_Exception(
-                    sprintf("Factory class '%s' must implement ProviderFactoryInterface.", $factoryClass),
+                    "Factory class '{$factoryClass}' must implement ProviderFactoryInterface.",
                 );
             }
-
             $provider = $factory->create($storeId);
         } else {
             throw new Mage_Core_Exception(
-                sprintf("Provider '%s' has no factory_method or factory_class configured.", $platformCode),
+                "Provider '{$platformCode}' has no factory_method or factory_class configured.",
             );
         }
 
         if (!($provider instanceof $requiredInterface)) {
             $shortInterface = basename(str_replace('_', '/', $requiredInterface));
             throw new Mage_Core_Exception(
-                sprintf("Platform '%s' does not implement %s.", $platformCode, $shortInterface),
+                "Platform '{$platformCode}' does not implement {$shortInterface}.",
             );
         }
 

@@ -28,6 +28,11 @@
                             <sort_order>20</sort_order>
                             <action>adminhtml/ai/tasks</action>
                         </tasks>
+                        <usage translate="title" module="ai">
+                            <title>Usage</title>
+                            <sort_order>25</sort_order>
+                            <action>adminhtml/ai/usage</action>
+                        </usage>
                         <reindex translate="title" module="ai">
                             <title>Queue All Embeddings</title>
                             <sort_order>30</sort_order>
@@ -56,6 +61,10 @@
                                         <title>Task History</title>
                                         <sort_order>20</sort_order>
                                     </tasks>
+                                    <usage translate="title" module="ai">
+                                        <title>Usage</title>
+                                        <sort_order>25</sort_order>
+                                    </usage>
                                     <reindex translate="title" module="ai">
                                         <title>Queue All Embeddings</title>
                                         <sort_order>30</sort_order>

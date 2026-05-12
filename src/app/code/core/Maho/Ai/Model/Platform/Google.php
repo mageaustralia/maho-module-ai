@@ -7,7 +7,7 @@ declare(strict_types=1);
  *
  * @category   Maho
  * @package    Maho_Ai
- * @copyright  Copyright (c) 2025-2026 Maho (https://mahocommerce.com)
+ * @copyright  Copyright (c) 2026 Maho (https://mahocommerce.com)
  * @license    https://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -18,18 +18,13 @@ class Maho_Ai_Model_Platform_Google implements
     Maho_Ai_Model_Platform_EmbedProviderInterface,
     Maho_Ai_Model_Platform_ImageProviderInterface
 {
-    private const string BASE_URL       = 'https://generativelanguage.googleapis.com/v1beta/models';
-
-    private const string IMAGE_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
+    private const BASE_URL       = 'https://generativelanguage.googleapis.com/v1beta/models';
+    private const IMAGE_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 
     private array $lastTokenUsage     = ['input' => 0, 'output' => 0];
-
     private string $lastModel         = '';
-
     private array $lastEmbedTokenUsage = ['input' => 0];
-
     private string $lastEmbedModel    = '';
-
     private string $lastImageModel    = '';
 
     public function __construct(
@@ -52,7 +47,6 @@ class Maho_Ai_Model_Platform_Google implements
                 $systemInstruction = ['parts' => [['text' => $message['content']]]];
                 continue;
             }
-
             $role = $message['role'] === 'assistant' ? 'model' : 'user';
             $contents[] = ['role' => $role, 'parts' => [['text' => $message['content']]]];
         }
@@ -83,7 +77,7 @@ class Maho_Ai_Model_Platform_Google implements
 
         if ($statusCode !== 200) {
             $error = $data['error']['message'] ?? 'Unknown error';
-            throw new Mage_Core_Exception(sprintf('Google AI API error (%s): %s', $statusCode, $error));
+            throw new Mage_Core_Exception("Google AI API error ({$statusCode}): {$error}");
         }
 
         $this->lastTokenUsage = [
@@ -146,7 +140,7 @@ class Maho_Ai_Model_Platform_Google implements
 
             if ($statusCode !== 200) {
                 $error = $data['error']['message'] ?? 'Unknown error';
-                throw new Mage_Core_Exception(sprintf('Google Embeddings API error (%s): %s', $statusCode, $error));
+                throw new Mage_Core_Exception("Google Embeddings API error ({$statusCode}): {$error}");
             }
 
             $vectors[$idx] = $data['embedding']['values'] ?? [];
@@ -206,7 +200,7 @@ class Maho_Ai_Model_Platform_Google implements
 
         if ($statusCode !== 200) {
             $error = $data['error']['message'] ?? 'Unknown error';
-            throw new Mage_Core_Exception(sprintf('Google Imagen API error (%s): %s', $statusCode, $error));
+            throw new Mage_Core_Exception("Google Imagen API error ({$statusCode}): {$error}");
         }
 
         $b64 = $data['predictions'][0]['bytesBase64Encoded'] ?? '';
@@ -215,7 +209,7 @@ class Maho_Ai_Model_Platform_Google implements
         }
 
         $mimeType = $data['predictions'][0]['mimeType'] ?? 'image/png';
-        return sprintf('data:%s;base64,%s', $mimeType, $b64);
+        return "data:{$mimeType};base64,{$b64}";
     }
 
     #[\Override]
@@ -238,11 +232,9 @@ class Maho_Ai_Model_Platform_Google implements
         if ($w === $h) {
             return '1:1';
         }
-
         if ($w > $h) {
             return '16:9';
         }
-
         return '9:16';
     }
 }

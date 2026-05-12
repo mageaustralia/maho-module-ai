@@ -7,7 +7,7 @@ declare(strict_types=1);
  *
  * @category   Maho
  * @package    Maho_Ai
- * @copyright  Copyright (c) 2025-2026 Maho (https://mahocommerce.com)
+ * @copyright  Copyright (c) 2026 Maho (https://mahocommerce.com)
  * @license    https://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -54,7 +54,6 @@ class Maho_Ai_Helper_Data extends Mage_Core_Helper_Abstract
             if (!$validation['safe']) {
                 throw new Mage_Core_Exception('AI request rejected: ' . $validation['reason']);
             }
-
             $messages[] = ['role' => 'user', 'content' => $userMessage];
         } else {
             // Validate each user message in the array
@@ -66,7 +65,6 @@ class Maho_Ai_Helper_Data extends Mage_Core_Helper_Abstract
                     }
                 }
             }
-
             $messages = array_merge($messages, $userMessage);
         }
 
@@ -166,7 +164,6 @@ class Maho_Ai_Helper_Data extends Mage_Core_Helper_Abstract
         if (!$this->isEnabled($storeId)) {
             throw new Mage_Core_Exception('Maho AI is disabled.');
         }
-
         if (!Mage::getStoreConfigFlag('maho_ai/embed/enabled', $storeId)) {
             throw new Mage_Core_Exception('Maho AI embeddings are disabled.');
         }
@@ -239,7 +236,7 @@ class Maho_Ai_Helper_Data extends Mage_Core_Helper_Abstract
             'platform'        => $data['platform'] ?? null,
             'model'           => $data['model'] ?? null,
             'messages'        => json_encode([['role' => 'user', 'content' => $data['text'] ?? '']]),
-            'context'         => $context !== [] ? json_encode($context) : null,
+            'context'         => $context ? json_encode($context) : null,
             'callback_class'  => $data['callback_class'] ?? null,
             'callback_method' => $data['callback_method'] ?? null,
             'max_retries'     => $data['max_retries'] ?? 3,
@@ -395,7 +392,8 @@ class Maho_Ai_Helper_Data extends Mage_Core_Helper_Abstract
             return;
         }
 
-        Mage::getStoreConfig('maho_ai/general/log_level');
+        $logLevel = Mage::getStoreConfig('maho_ai/general/log_level');
+        $cost     = Maho_Ai_Model_Platform::estimateCost($platform, $model, $tokenUsage['input'], $tokenUsage['output']);
 
         $message = sprintf(
             '[%s] consumer=%s platform=%s model=%s in=%d out=%d cost=$%.6f',
@@ -405,9 +403,27 @@ class Maho_Ai_Helper_Data extends Mage_Core_Helper_Abstract
             $model,
             $tokenUsage['input'],
             $tokenUsage['output'],
-            Maho_Ai_Model_Platform::estimateCost($platform, $model, $tokenUsage['input'], $tokenUsage['output']),
+            $cost,
         );
 
         Mage::log($message, Mage::LOG_INFO, 'maho_ai.log');
+
+        // Persist a per-day aggregated row so the admin Usage grid surfaces
+        // synchronous calls (image gen, completions). Wrapped in try/catch:
+        // usage logging is observability — never fatal the originating AI
+        // call if persistence trips.
+        try {
+            Mage::getModel('ai/usage')->recordCall(
+                consumer: $consumer,
+                platform: $platform,
+                model: $model,
+                storeId: $storeId,
+                inputTokens: (int) ($tokenUsage['input'] ?? 0),
+                outputTokens: (int) ($tokenUsage['output'] ?? 0),
+                estimatedCost: $cost,
+            );
+        } catch (\Throwable $e) {
+            Mage::logException($e);
+        }
     }
 }

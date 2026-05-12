@@ -7,7 +7,7 @@ declare(strict_types=1);
  *
  * @category   Maho
  * @package    Maho_Ai
- * @copyright  Copyright (c) 2025-2026 Maho (https://mahocommerce.com)
+ * @copyright  Copyright (c) 2026 Maho (https://mahocommerce.com)
  * @license    https://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -16,6 +16,7 @@ class Maho_Ai_Model_TaskRunner
     /**
      * Process pending tasks from the queue (cron entry point)
      */
+    #[Maho\Config\CronJob('maho_ai_process_queue', configPath: 'maho_ai/queue/cron_schedule')]
     public function processQueue(): void
     {
         if (!Mage::getStoreConfigFlag('maho_ai/queue/enabled')) {
@@ -34,7 +35,7 @@ class Maho_Ai_Model_TaskRunner
         $collection->addFieldToFilter('status', Maho_Ai_Model_Task::STATUS_PENDING)
             ->addExpressionFieldToSelect(
                 'priority_order',
-                "CASE WHEN {{priority}} = 'interactive' THEN 0 ELSE 1 END",
+                'CASE WHEN {{priority}} = \'interactive\' THEN 0 ELSE 1 END',
                 ['priority' => 'priority'],
             )
             ->setOrder('priority_order', 'ASC')
@@ -47,57 +48,48 @@ class Maho_Ai_Model_TaskRunner
     }
 
     /**
-     * Aggregate completed task usage into the daily usage table.
-     *
-     * Idempotent: deletes yesterday's existing rollup before reinserting, so
-     * running the cron twice on the same day doesn't double-count. Uses the
-     * query builder + insertMultiple to stay portable across MySQL/Postgres/SQLite
-     * (no ON DUPLICATE KEY UPDATE).
+     * Aggregate completed task usage into the daily usage table
      */
+    #[Maho\Config\CronJob('maho_ai_aggregate_usage', schedule: '5 0 * * *')]
     public function aggregateUsage(): void
     {
         $connection = Mage::getSingleton('core/resource')->getConnection('core_write');
         $taskTable  = Mage::getSingleton('core/resource')->getTableName('ai/task');
         $usageTable = Mage::getSingleton('core/resource')->getTableName('ai/usage');
 
+        // Aggregate yesterday's completed tasks into usage
         $yesterday = date('Y-m-d', strtotime('-1 day'));
 
-        $select = $connection->select()
-            ->from($taskTable, [
-                'consumer',
-                'platform',
-                'model',
-                'store_id',
-                'period_date'    => new \Maho\Db\Expr('DATE(completed_at)'),
-                'request_count'  => new \Maho\Db\Expr('COUNT(*)'),
-                'input_tokens'   => new \Maho\Db\Expr('SUM(input_tokens)'),
-                'output_tokens'  => new \Maho\Db\Expr('SUM(output_tokens)'),
-                'estimated_cost' => new \Maho\Db\Expr('SUM(estimated_cost)'),
-            ])
-            ->where('status = ?', Maho_Ai_Model_Task::STATUS_COMPLETE)
-            ->where('DATE(completed_at) = ?', $yesterday)
-            ->where('platform IS NOT NULL')
-            ->group(['consumer', 'platform', 'model', 'store_id', new \Maho\Db\Expr('DATE(completed_at)')]);
-
-        $rows = $connection->fetchAll($select);
-        if ($rows === []) {
-            return;
-        }
-
-        $connection->beginTransaction();
-        try {
-            $connection->delete($usageTable, ['period_date = ?' => $yesterday]);
-            $connection->insertMultiple($usageTable, $rows);
-            $connection->commit();
-        } catch (\Throwable $throwable) {
-            $connection->rollBack();
-            throw $throwable;
-        }
+        $connection->query("
+            INSERT INTO {$usageTable}
+                (consumer, platform, model, store_id, period_date, request_count, input_tokens, output_tokens, estimated_cost)
+            SELECT
+                consumer,
+                platform,
+                model,
+                store_id,
+                DATE(completed_at) as period_date,
+                COUNT(*) as request_count,
+                SUM(input_tokens) as input_tokens,
+                SUM(output_tokens) as output_tokens,
+                SUM(estimated_cost) as estimated_cost
+            FROM {$taskTable}
+            WHERE status = 'complete'
+                AND DATE(completed_at) = '{$yesterday}'
+                AND platform IS NOT NULL
+            GROUP BY consumer, platform, model, store_id, DATE(completed_at)
+            ON DUPLICATE KEY UPDATE
+                request_count  = request_count + VALUES(request_count),
+                input_tokens   = input_tokens + VALUES(input_tokens),
+                output_tokens  = output_tokens + VALUES(output_tokens),
+                estimated_cost = estimated_cost + VALUES(estimated_cost)
+        ");
     }
 
     /**
      * Clean up old completed/failed tasks (keeps last 90 days)
      */
+    #[Maho\Config\CronJob('maho_ai_cleanup_old_tasks', schedule: '0 3 * * 0')]
     public function cleanupOldTasks(): void
     {
         $connection = Mage::getSingleton('core/resource')->getConnection('core_write');
@@ -108,6 +100,31 @@ class Maho_Ai_Model_TaskRunner
             'status IN (?)' => [Maho_Ai_Model_Task::STATUS_COMPLETE, Maho_Ai_Model_Task::STATUS_FAILED, Maho_Ai_Model_Task::STATUS_CANCELLED],
             'completed_at < ?' => $cutoff,
         ]);
+    }
+
+    /**
+     * Process a single task by id, immediately, in the current process.
+     *
+     * Used by callers that submit a task and want it processed without
+     * waiting for the cron tick — typically paired with
+     * `fastcgi_finish_request()` so the HTTP response returns to the
+     * browser before the (potentially slow) AI provider call runs.
+     *
+     * Idempotent: a task that's already complete/failed/cancelled is a
+     * no-op. A task that's currently `processing` is also skipped to
+     * avoid double-runs from racing callers.
+     */
+    public function processTask(int $taskId): void
+    {
+        /** @var Maho_Ai_Model_Task $task */
+        $task = Mage::getModel('ai/task')->load($taskId);
+        if (!$task->getId()) {
+            throw new Mage_Core_Exception("Maho AI task #{$taskId} not found");
+        }
+        if ($task->getData('status') !== Maho_Ai_Model_Task::STATUS_PENDING) {
+            return;
+        }
+        $this->executeTask($task);
     }
 
     private function executeTask(Maho_Ai_Model_Task $task): void
@@ -121,12 +138,12 @@ class Maho_Ai_Model_TaskRunner
                 Maho_Ai_Model_Task::TYPE_COMPLETION => $this->executeCompletionTask($task),
                 Maho_Ai_Model_Task::TYPE_EMBEDDING  => $this->executeEmbedTask($task),
                 Maho_Ai_Model_Task::TYPE_IMAGE      => $this->executeImageTask($task),
-                default => throw new Mage_Core_Exception('Unknown task type: ' . $taskType),
+                default => throw new Mage_Core_Exception("Unknown task type: {$taskType}"),
             };
-        } catch (Throwable $throwable) {
-            $task->markFailed($throwable->getMessage())->save();
+        } catch (Throwable $e) {
+            $task->markFailed($e->getMessage())->save();
             Mage::log(
-                sprintf('Maho AI task #%d failed: %s', $task->getId(), $throwable->getMessage()),
+                sprintf('Maho AI task #%d failed: %s', $task->getId(), $e->getMessage()),
                 Mage::LOG_ERROR,
                 'maho_ai.log',
             );
@@ -224,14 +241,16 @@ class Maho_Ai_Model_TaskRunner
         $messages = $task->getMessagesArray();
         $prompt   = $messages[0]['content'] ?? '';
 
+        // Pass the full context as provider options (rather than a fixed
+        // allowlist of width/height/quality/style) so consumers can hand
+        // through provider-specific keys like `aspect_ratio`, `size`,
+        // `imageDataUrl` (img2img), `seed`, etc. Providers ignore unknown
+        // keys.
         $context = $task->getContextArray();
-        $options = array_filter([
-            'model'   => $task->getData('model'),
-            'width'   => $context['width'] ?? null,
-            'height'  => $context['height'] ?? null,
-            'quality' => $context['quality'] ?? null,
-            'style'   => $context['style'] ?? null,
-        ]);
+        $options = $context;
+        if ($task->getData('model')) {
+            $options['model'] = $task->getData('model');
+        }
 
         /** @var Maho_Ai_Model_Platform_Factory $factory */
         $factory  = Mage::getSingleton('ai/platform_factory');
@@ -263,13 +282,13 @@ class Maho_Ai_Model_TaskRunner
         }
 
         if (!class_exists($callbackClass)) {
-            Mage::log(sprintf('Maho AI: callback class %s not found', $callbackClass), Mage::LOG_WARNING, 'maho_ai.log');
+            Mage::log("Maho AI: callback class {$callbackClass} not found", Mage::LOG_WARNING, 'maho_ai.log');
             return;
         }
 
         $instance = new $callbackClass();
         if (!method_exists($instance, $callbackMethod)) {
-            Mage::log(sprintf('Maho AI: callback method %s::%s not found', $callbackClass, $callbackMethod), Mage::LOG_WARNING, 'maho_ai.log');
+            Mage::log("Maho AI: callback method {$callbackClass}::{$callbackMethod} not found", Mage::LOG_WARNING, 'maho_ai.log');
             return;
         }
 
@@ -283,18 +302,15 @@ class Maho_Ai_Model_TaskRunner
         $cutoff     = date('Y-m-d H:i:s', time() - $timeoutSeconds);
 
         // Re-queue timed-out tasks (they'll be retried up to max_retries)
-        $connection->update(
-            $taskTable,
-            [
-                'status'        => new \Maho\Db\Expr("CASE WHEN retries >= max_retries THEN 'failed' ELSE 'pending' END"),
-                'retries'       => new \Maho\Db\Expr('retries + 1'),
-                'error_message' => 'Task timed out',
-                'completed_at'  => new \Maho\Db\Expr('CASE WHEN retries >= max_retries THEN NOW() ELSE NULL END'),
-            ],
-            [
-                'status = ?'     => 'processing',
-                'started_at < ?' => $cutoff,
-            ],
-        );
+        $connection->query("
+            UPDATE {$taskTable}
+            SET
+                status = CASE WHEN retries >= max_retries THEN 'failed' ELSE 'pending' END,
+                retries = retries + 1,
+                error_message = 'Task timed out',
+                completed_at = CASE WHEN retries >= max_retries THEN NOW() ELSE NULL END
+            WHERE status = 'processing'
+                AND started_at < '{$cutoff}'
+        ");
     }
 }

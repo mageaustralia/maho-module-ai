@@ -7,7 +7,7 @@ declare(strict_types=1);
  *
  * @category   Maho
  * @package    Maho_Ai
- * @copyright  Copyright (c) 2025-2026 Maho (https://mahocommerce.com)
+ * @copyright  Copyright (c) 2026 Maho (https://mahocommerce.com)
  * @license    https://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -181,9 +181,9 @@ $table = $connection->newTable($this->getTable('ai/usage'))
         'default'  => '0.000000',
     ], 'Estimated cost in USD')
     ->addIndex(
-        $this->getIdxName('ai/usage', ['consumer', 'platform', 'model', 'store_id', 'period_date'], \Maho\Db\Adapter\AdapterInterface::INDEX_TYPE_UNIQUE),
+        $this->getIdxName('ai/usage', ['consumer', 'platform', 'model', 'store_id', 'period_date'], Varien_Db_Adapter_Interface::INDEX_TYPE_UNIQUE),
         ['consumer', 'platform', 'model', 'store_id', 'period_date'],
-        ['type' => \Maho\Db\Adapter\AdapterInterface::INDEX_TYPE_UNIQUE],
+        ['type' => Varien_Db_Adapter_Interface::INDEX_TYPE_UNIQUE],
     )
     ->setComment('Maho AI Daily Usage Aggregation');
 
@@ -233,9 +233,9 @@ $table = $connection->newTable($this->getTable('ai/vector'))
         'default'  => Maho\Db\Ddl\Table::TIMESTAMP_INIT_UPDATE,
     ], 'Updated At')
     ->addIndex(
-        $this->getIdxName('ai/vector', ['entity_type', 'entity_id', 'store_id'], \Maho\Db\Adapter\AdapterInterface::INDEX_TYPE_UNIQUE),
+        $this->getIdxName('ai/vector', ['entity_type', 'entity_id', 'store_id'], Varien_Db_Adapter_Interface::INDEX_TYPE_UNIQUE),
         ['entity_type', 'entity_id', 'store_id'],
-        ['type' => \Maho\Db\Adapter\AdapterInterface::INDEX_TYPE_UNIQUE],
+        ['type' => Varien_Db_Adapter_Interface::INDEX_TYPE_UNIQUE],
     )
     ->addIndex(
         $this->getIdxName('ai/vector', ['entity_type', 'entity_id']),

@@ -15,14 +15,13 @@ class Maho_Ai_Model_Observer
 {
     /**
      * Auto-queue an embedding task when a product is saved.
-     * Triggered by: catalog_product_save_after
      */
+    #[Maho\Config\Observer('catalog_product_save_after', id: 'maho_ai_product_embed')]
     public function onProductSave(\Maho\Event\Observer $observer): void
     {
         if (!Mage::getStoreConfigFlag('maho_ai/embed/enabled')) {
             return;
         }
-
         if (!Mage::getStoreConfigFlag('maho_ai/embed/auto_embed_products')) {
             return;
         }
@@ -34,7 +33,7 @@ class Maho_Ai_Model_Observer
         }
 
         $text = $this->buildProductText($product);
-        if ($text === '' || $text === '0') {
+        if (!$text) {
             return;
         }
 
@@ -46,21 +45,20 @@ class Maho_Ai_Model_Observer
                 'entity_id'   => (int) $product->getId(),
                 'store_id'    => (int) $product->getStoreId(),
             ]);
-        } catch (Mage_Core_Exception $mageCoreException) {
-            Mage::log('Maho AI: failed to queue product embed: ' . $mageCoreException->getMessage(), Mage::LOG_WARNING, 'maho_ai.log');
+        } catch (Mage_Core_Exception $e) {
+            Mage::log('Maho AI: failed to queue product embed: ' . $e->getMessage(), Mage::LOG_WARNING, 'maho_ai.log');
         }
     }
 
     /**
      * Auto-queue an embedding task when a category is saved.
-     * Triggered by: catalog_category_save_after
      */
+    #[Maho\Config\Observer('catalog_category_save_after', id: 'maho_ai_category_embed')]
     public function onCategorySave(\Maho\Event\Observer $observer): void
     {
         if (!Mage::getStoreConfigFlag('maho_ai/embed/enabled')) {
             return;
         }
-
         if (!Mage::getStoreConfigFlag('maho_ai/embed/auto_embed_categories')) {
             return;
         }
@@ -72,7 +70,7 @@ class Maho_Ai_Model_Observer
         }
 
         $text = $this->buildCategoryText($category);
-        if ($text === '' || $text === '0') {
+        if (!$text) {
             return;
         }
 
@@ -84,8 +82,8 @@ class Maho_Ai_Model_Observer
                 'entity_id'   => (int) $category->getId(),
                 'store_id'    => (int) $category->getStoreId(),
             ]);
-        } catch (Mage_Core_Exception $mageCoreException) {
-            Mage::log('Maho AI: failed to queue category embed: ' . $mageCoreException->getMessage(), Mage::LOG_WARNING, 'maho_ai.log');
+        } catch (Mage_Core_Exception $e) {
+            Mage::log('Maho AI: failed to queue category embed: ' . $e->getMessage(), Mage::LOG_WARNING, 'maho_ai.log');
         }
     }
 

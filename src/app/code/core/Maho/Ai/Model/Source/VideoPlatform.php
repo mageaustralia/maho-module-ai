@@ -19,7 +19,6 @@ class Maho_Ai_Model_Source_VideoPlatform
         foreach (Maho_Ai_Model_Platform::getProvidersWithCapability('video') as $code => $label) {
             $options[] = ['value' => $code, 'label' => $label];
         }
-
         return $options;
     }
 }

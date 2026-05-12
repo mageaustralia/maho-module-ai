@@ -7,7 +7,7 @@ declare(strict_types=1);
  *
  * @category   Maho
  * @package    Maho_Ai
- * @copyright  Copyright (c) 2025-2026 Maho (https://mahocommerce.com)
+ * @copyright  Copyright (c) 2026 Maho (https://mahocommerce.com)
  * @license    https://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -76,7 +76,7 @@ class Maho_Ai_Model_Resource_Vector extends Mage_Core_Model_Resource_Db_Abstract
         }
 
         return [
-            'vector'     => json_decode((string) $row['vector'], true) ?? [],
+            'vector'     => json_decode($row['vector'], true) ?? [],
             'model'      => $row['model'],
             'platform'   => $row['platform'],
             'dimensions' => (int) $row['dimensions'],

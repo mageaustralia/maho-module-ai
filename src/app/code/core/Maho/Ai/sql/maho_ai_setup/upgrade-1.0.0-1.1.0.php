@@ -7,7 +7,7 @@ declare(strict_types=1);
  *
  * @category   Maho
  * @package    Maho_Ai
- * @copyright  Copyright (c) 2025-2026 Maho (https://mahocommerce.com)
+ * @copyright  Copyright (c) 2026 Maho (https://mahocommerce.com)
  * @license    https://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -33,7 +33,7 @@ if (!$connection->tableColumnExists($taskTable, 'task_type')) {
 // Add index on task_type
 $idxName = $this->getIdxName('ai/task', ['task_type']);
 $indexes = $connection->getIndexList($taskTable);
-if (!isset($indexes[strtoupper((string) $idxName)])) {
+if (!isset($indexes[strtoupper($idxName)])) {
     $connection->addIndex($taskTable, $idxName, ['task_type']);
 }
 
@@ -80,9 +80,9 @@ if (!$connection->isTableExists($this->getTable('ai/vector'))) {
             'default'  => Maho\Db\Ddl\Table::TIMESTAMP_INIT_UPDATE,
         ], 'Updated At')
         ->addIndex(
-            $this->getIdxName('ai/vector', ['entity_type', 'entity_id', 'store_id'], \Maho\Db\Adapter\AdapterInterface::INDEX_TYPE_UNIQUE),
+            $this->getIdxName('ai/vector', ['entity_type', 'entity_id', 'store_id'], Varien_Db_Adapter_Interface::INDEX_TYPE_UNIQUE),
             ['entity_type', 'entity_id', 'store_id'],
-            ['type' => \Maho\Db\Adapter\AdapterInterface::INDEX_TYPE_UNIQUE],
+            ['type' => Varien_Db_Adapter_Interface::INDEX_TYPE_UNIQUE],
         )
         ->addIndex(
             $this->getIdxName('ai/vector', ['entity_type', 'entity_id']),

@@ -7,7 +7,7 @@ declare(strict_types=1);
  *
  * @category   Maho
  * @package    Maho_Ai
- * @copyright  Copyright (c) 2025-2026 Maho (https://mahocommerce.com)
+ * @copyright  Copyright (c) 2026 Maho (https://mahocommerce.com)
  * @license    https://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
@@ -15,12 +15,10 @@ use Symfony\Component\HttpClient\HttpClient;
 
 class Maho_Ai_Model_Platform_Anthropic implements Maho_Ai_Model_Platform_ProviderInterface
 {
-    private const string API_URL = 'https://api.anthropic.com/v1/messages';
-
-    private const string API_VERSION = '2023-06-01';
+    private const API_URL = 'https://api.anthropic.com/v1/messages';
+    private const API_VERSION = '2023-06-01';
 
     private array $lastTokenUsage = ['input' => 0, 'output' => 0];
-
     private string $lastModel = '';
 
     public function __construct(
@@ -75,7 +73,7 @@ class Maho_Ai_Model_Platform_Anthropic implements Maho_Ai_Model_Platform_Provide
 
         if ($statusCode !== 200) {
             $error = $data['error']['message'] ?? 'Unknown error';
-            throw new Mage_Core_Exception(sprintf('Anthropic API error (%s): %s', $statusCode, $error));
+            throw new Mage_Core_Exception("Anthropic API error ({$statusCode}): {$error}");
         }
 
         $this->lastTokenUsage = [
