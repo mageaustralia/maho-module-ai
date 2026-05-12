@@ -11,32 +11,39 @@ declare(strict_types=1);
  * @license    https://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
+/**
+ * Builds provider instances for the seven built-in platforms (OpenAI,
+ * Anthropic, Google, Mistral, OpenRouter, Ollama, Generic) by delegating
+ * to Maho_Ai_Model_Platform_Symfony - a single adapter class that wraps
+ * the matching symfony/ai-platform Bridge.
+ *
+ * Community providers (registered in global/ai/providers/{code} via
+ * config XML) flow through createFromRegistry() and supply their own
+ * factory class implementing ProviderFactoryInterface.
+ *
+ * @see https://github.com/MahoCommerce/maho/issues/468
+ */
 class Maho_Ai_Model_Platform_Factory
 {
     /**
-     * Create a provider instance for the given platform.
+     * Create a chat provider for the given platform.
      *
-     * @throws Mage_Core_Exception if platform is not configured or unknown
+     * @throws Mage_Core_Exception if platform is unknown or unconfigured
      */
     public function create(?string $platformCode = null, ?int $storeId = null): Maho_Ai_Model_Platform_ProviderInterface
     {
         $platformCode ??= $this->getDefaultPlatform($storeId);
 
-        return match ($platformCode) {
-            Maho_Ai_Model_Platform::OPENAI     => $this->createOpenAi($storeId),
-            Maho_Ai_Model_Platform::ANTHROPIC  => $this->createAnthropic($storeId),
-            Maho_Ai_Model_Platform::GOOGLE     => $this->createGoogle($storeId),
-            Maho_Ai_Model_Platform::MISTRAL    => $this->createMistral($storeId),
-            Maho_Ai_Model_Platform::OPENROUTER => $this->createOpenRouter($storeId),
-            Maho_Ai_Model_Platform::OLLAMA     => $this->createOllama($storeId),
-            Maho_Ai_Model_Platform::GENERIC    => $this->createGeneric($storeId),
-            default => $this->createFromRegistry(
-                $platformCode,
-                $storeId,
-                'chat',
-                Maho_Ai_Model_Platform_ProviderInterface::class,
-            ),
-        };
+        if ($this->isBuiltIn($platformCode)) {
+            return $this->createSymfonyShim($platformCode, $storeId);
+        }
+
+        return $this->createFromRegistry(
+            $platformCode,
+            $storeId,
+            'chat',
+            Maho_Ai_Model_Platform_ProviderInterface::class,
+        );
     }
 
     public function getDefaultPlatform(?int $storeId = null): string
@@ -46,228 +53,71 @@ class Maho_Ai_Model_Platform_Factory
     }
 
     /**
-     * Create a provider instance that implements EmbedProviderInterface.
+     * Create an embed provider. The Symfony shim implements all three
+     * interfaces (chat / embed / image) so we can return the same
+     * instance shape regardless of capability requested.
      *
-     * @throws Mage_Core_Exception if platform is not configured, unknown, or does not support embeddings
+     * @throws Mage_Core_Exception if the platform doesn't support embeddings
      */
     public function createEmbed(?string $platformCode = null, ?int $storeId = null): Maho_Ai_Model_Platform_EmbedProviderInterface
     {
         $platformCode ??= (string) Mage::getStoreConfig('maho_ai/embed/default_platform', $storeId)
             ?: Maho_Ai_Model_Platform::OPENAI;
 
-        $provider = match ($platformCode) {
-            Maho_Ai_Model_Platform::OPENAI   => $this->createOpenAi($storeId),
-            Maho_Ai_Model_Platform::GOOGLE   => $this->createGoogle($storeId),
-            Maho_Ai_Model_Platform::MISTRAL  => $this->createMistralForEmbed($storeId),
-            Maho_Ai_Model_Platform::OLLAMA   => $this->createOllamaForEmbed($storeId),
-            Maho_Ai_Model_Platform::GENERIC  => $this->createGenericForEmbed($storeId),
-            default => $this->createFromRegistry(
-                $platformCode,
-                $storeId,
-                'embed',
-                Maho_Ai_Model_Platform_EmbedProviderInterface::class,
-            ),
-        };
+        if ($this->isBuiltIn($platformCode)) {
+            $provider = $this->createSymfonyShim($platformCode, $storeId, embedModelGroup: true);
+            if (!$provider instanceof Maho_Ai_Model_Platform_EmbedProviderInterface) {
+                throw new Mage_Core_Exception("Platform '{$platformCode}' does not support embeddings.");
+            }
+            return $provider;
+        }
 
+        $provider = $this->createFromRegistry(
+            $platformCode,
+            $storeId,
+            'embed',
+            Maho_Ai_Model_Platform_EmbedProviderInterface::class,
+        );
         return $provider;
     }
 
     /**
-     * Create a provider instance that implements ImageProviderInterface.
+     * Create an image provider. Same shim shape as embed/chat.
      *
-     * @throws Mage_Core_Exception if platform is not configured, unknown, or does not support image generation
+     * @throws Mage_Core_Exception if the platform doesn't support image gen
      */
     public function createImage(?string $platformCode = null, ?int $storeId = null): Maho_Ai_Model_Platform_ImageProviderInterface
     {
         $platformCode ??= (string) Mage::getStoreConfig('maho_ai/image/default_platform', $storeId)
             ?: Maho_Ai_Model_Platform::OPENAI;
 
-        $provider = match ($platformCode) {
-            Maho_Ai_Model_Platform::OPENAI  => $this->createOpenAi($storeId),
-            Maho_Ai_Model_Platform::GOOGLE  => $this->createGoogle($storeId),
-            Maho_Ai_Model_Platform::GENERIC => $this->createGenericForImage($storeId),
-            default => $this->createFromRegistry(
-                $platformCode,
-                $storeId,
-                'image',
-                Maho_Ai_Model_Platform_ImageProviderInterface::class,
-            ),
-        };
+        if ($this->isBuiltIn($platformCode)) {
+            $provider = $this->createSymfonyShim($platformCode, $storeId);
+            if (!$provider instanceof Maho_Ai_Model_Platform_ImageProviderInterface) {
+                throw new Mage_Core_Exception("Platform '{$platformCode}' does not support image generation.");
+            }
+            return $provider;
+        }
 
+        $provider = $this->createFromRegistry(
+            $platformCode,
+            $storeId,
+            'image',
+            Maho_Ai_Model_Platform_ImageProviderInterface::class,
+        );
         return $provider;
     }
 
-    private function getConfig(string $path, ?int $storeId = null): string
-    {
-        return (string) Mage::getStoreConfig($path, $storeId);
-    }
-
-    /** For fields stored with backend_model=adminhtml/system_config_backend_encrypted. */
-    private function getEncryptedConfig(string $path, ?int $storeId = null): string
-    {
-        return (string) Mage::helper('core')->decrypt($this->getConfig($path, $storeId));
-    }
-
-    private function resolveModel(string $platform, ?int $storeId): string
-    {
-        return $this->getConfig("maho_ai/general/{$platform}_model", $storeId);
-    }
-
-    private function createOpenAi(?int $storeId): Maho_Ai_Model_Platform_OpenAi
-    {
-        $apiKey = $this->getEncryptedConfig('maho_ai/general/openai_api_key', $storeId);
-        if (!$apiKey) {
-            throw new Mage_Core_Exception('OpenAI API key is not configured.');
-        }
-        return new Maho_Ai_Model_Platform_OpenAi(
-            apiKey: $apiKey,
-            defaultModel: $this->resolveModel(Maho_Ai_Model_Platform::OPENAI, $storeId),
-            extraHeaders: array_filter([
-                'OpenAI-Organization' => $this->getConfig('maho_ai/general/openai_organization_id', $storeId),
-            ]),
-        );
-    }
-
-    private function createAnthropic(?int $storeId): Maho_Ai_Model_Platform_Anthropic
-    {
-        $apiKey = $this->getEncryptedConfig('maho_ai/general/anthropic_api_key', $storeId);
-        if (!$apiKey) {
-            throw new Mage_Core_Exception('Anthropic API key is not configured.');
-        }
-        return new Maho_Ai_Model_Platform_Anthropic(
-            apiKey: $apiKey,
-            defaultModel: $this->resolveModel(Maho_Ai_Model_Platform::ANTHROPIC, $storeId),
-        );
-    }
-
-    private function createGoogle(?int $storeId): Maho_Ai_Model_Platform_Google
-    {
-        $apiKey = $this->getEncryptedConfig('maho_ai/general/google_api_key', $storeId);
-        if (!$apiKey) {
-            throw new Mage_Core_Exception('Google AI API key is not configured.');
-        }
-        return new Maho_Ai_Model_Platform_Google(
-            apiKey: $apiKey,
-            defaultModel: $this->resolveModel(Maho_Ai_Model_Platform::GOOGLE, $storeId),
-        );
-    }
-
-    private function createMistral(?int $storeId): Maho_Ai_Model_Platform_Mistral
-    {
-        $apiKey = $this->getEncryptedConfig('maho_ai/general/mistral_api_key', $storeId);
-        if (!$apiKey) {
-            throw new Mage_Core_Exception('Mistral API key is not configured.');
-        }
-        return new Maho_Ai_Model_Platform_Mistral(
-            apiKey: $apiKey,
-            defaultModel: $this->resolveModel(Maho_Ai_Model_Platform::MISTRAL, $storeId),
-        );
-    }
-
-    private function createOpenRouter(?int $storeId): Maho_Ai_Model_Platform_OpenRouter
-    {
-        $apiKey = $this->getEncryptedConfig('maho_ai/general/openrouter_api_key', $storeId);
-        if (!$apiKey) {
-            throw new Mage_Core_Exception('OpenRouter API key is not configured.');
-        }
-        return new Maho_Ai_Model_Platform_OpenRouter(
-            apiKey: $apiKey,
-            defaultModel: $this->resolveModel(Maho_Ai_Model_Platform::OPENROUTER, $storeId),
-        );
-    }
-
-    private function createOllama(?int $storeId): Maho_Ai_Model_Platform_Ollama
-    {
-        $baseUrl = $this->getConfig('maho_ai/general/ollama_base_url', $storeId) ?: 'http://localhost:11434';
-        return new Maho_Ai_Model_Platform_Ollama(
-            baseUrl: $baseUrl,
-            defaultModel: $this->resolveModel(Maho_Ai_Model_Platform::OLLAMA, $storeId),
-        );
-    }
-
-    private function createGeneric(?int $storeId): Maho_Ai_Model_Platform_Generic
-    {
-        $baseUrl = $this->getConfig('maho_ai/general/generic_base_url', $storeId);
-        if (!$baseUrl) {
-            throw new Mage_Core_Exception('Generic provider base URL is not configured.');
-        }
-        return new Maho_Ai_Model_Platform_Generic(
-            baseUrl: $baseUrl,
-            apiKey: $this->getEncryptedConfig('maho_ai/general/generic_api_key', $storeId),
-            defaultModel: $this->resolveModel(Maho_Ai_Model_Platform::GENERIC, $storeId),
-        );
-    }
-
-    // -------------------------------------------------------------------------
-    // Embed-specific creators (use embed config group for base URL / API key)
-    // -------------------------------------------------------------------------
-
-    private function createMistralForEmbed(?int $storeId): Maho_Ai_Model_Platform_Mistral
-    {
-        $apiKey = $this->getEncryptedConfig('maho_ai/general/mistral_api_key', $storeId);
-        if (!$apiKey) {
-            throw new Mage_Core_Exception('Mistral API key is not configured.');
-        }
-        return new Maho_Ai_Model_Platform_Mistral(
-            apiKey: $apiKey,
-            defaultModel: $this->getConfig('maho_ai/embed/mistral_model', $storeId) ?: 'mistral-embed',
-        );
-    }
-
-    private function createOllamaForEmbed(?int $storeId): Maho_Ai_Model_Platform_Ollama
-    {
-        $baseUrl = $this->getConfig('maho_ai/general/ollama_base_url', $storeId) ?: 'http://localhost:11434';
-        return new Maho_Ai_Model_Platform_Ollama(
-            baseUrl: $baseUrl,
-            defaultModel: $this->getConfig('maho_ai/embed/ollama_model', $storeId) ?: 'nomic-embed-text',
-        );
-    }
-
-    private function createGenericForEmbed(?int $storeId): Maho_Ai_Model_Platform_Generic
-    {
-        $baseUrl = $this->getConfig('maho_ai/embed/generic_base_url', $storeId)
-            ?: $this->getConfig('maho_ai/general/generic_base_url', $storeId);
-        if (!$baseUrl) {
-            throw new Mage_Core_Exception('Generic embed provider base URL is not configured.');
-        }
-        $apiKey = $this->getEncryptedConfig('maho_ai/embed/generic_api_key', $storeId)
-            ?: $this->getEncryptedConfig('maho_ai/general/generic_api_key', $storeId);
-        return new Maho_Ai_Model_Platform_Generic(
-            baseUrl: $baseUrl,
-            apiKey: $apiKey,
-            defaultModel: $this->getConfig('maho_ai/embed/generic_model', $storeId),
-        );
-    }
-
-    // -------------------------------------------------------------------------
-    // Image-specific creators (use image config group for base URL / API key)
-    // -------------------------------------------------------------------------
-
-    private function createGenericForImage(?int $storeId): Maho_Ai_Model_Platform_Generic
-    {
-        $baseUrl = $this->getConfig('maho_ai/image/generic_base_url', $storeId)
-            ?: $this->getConfig('maho_ai/general/generic_base_url', $storeId);
-        if (!$baseUrl) {
-            throw new Mage_Core_Exception('Generic image provider base URL is not configured.');
-        }
-        $apiKey = $this->getEncryptedConfig('maho_ai/image/generic_api_key', $storeId)
-            ?: $this->getEncryptedConfig('maho_ai/general/generic_api_key', $storeId);
-        return new Maho_Ai_Model_Platform_Generic(
-            baseUrl: $baseUrl,
-            apiKey: $apiKey,
-            defaultModel: $this->getConfig('maho_ai/image/generic_model', $storeId),
-        );
-    }
-
     /**
-     * Create a provider instance that implements VideoProviderInterface.
+     * Create a video provider. Symfony AI Platform doesn't ship video
+     * bridges yet (as of 0.7), so this path is registry-only - community
+     * providers like NanoGPT plug in via the config XML registry.
      *
-     * @throws Mage_Core_Exception if platform is not configured, unknown, or does not support video
+     * @throws Mage_Core_Exception if no provider configured
      */
     public function createVideo(?string $platformCode = null, ?int $storeId = null): Maho_Ai_Model_Platform_VideoProviderInterface
     {
         $platformCode ??= (string) Mage::getStoreConfig('maho_ai/video/default_platform', $storeId);
-
         if (!$platformCode) {
             throw new Mage_Core_Exception('No video provider configured.');
         }
@@ -278,15 +128,50 @@ class Maho_Ai_Model_Platform_Factory
             'video',
             Maho_Ai_Model_Platform_VideoProviderInterface::class,
         );
-
         return $provider;
     }
 
+    // -------------------------------------------------------------------------
+    // Symfony AI Platform shim - the unified path for built-in providers
+    // -------------------------------------------------------------------------
+
+    private function isBuiltIn(string $platformCode): bool
+    {
+        return in_array($platformCode, [
+            Maho_Ai_Model_Platform::OPENAI,
+            Maho_Ai_Model_Platform::ANTHROPIC,
+            Maho_Ai_Model_Platform::GOOGLE,
+            Maho_Ai_Model_Platform::MISTRAL,
+            Maho_Ai_Model_Platform::OPENROUTER,
+            Maho_Ai_Model_Platform::OLLAMA,
+            Maho_Ai_Model_Platform::GENERIC,
+        ], true);
+    }
+
+    private function createSymfonyShim(string $platformCode, ?int $storeId, bool $embedModelGroup = false): Maho_Ai_Model_Platform_Symfony
+    {
+        // $embedModelGroup is reserved for future per-capability model
+        // selection. The Symfony shim's static factories already read
+        // embed/image model config paths so the same instance serves
+        // all three capabilities for a given platform.
+        unset($embedModelGroup);
+
+        return match ($platformCode) {
+            Maho_Ai_Model_Platform::OPENAI     => Maho_Ai_Model_Platform_Symfony::createForOpenAi($storeId),
+            Maho_Ai_Model_Platform::ANTHROPIC  => Maho_Ai_Model_Platform_Symfony::createForAnthropic($storeId),
+            Maho_Ai_Model_Platform::GOOGLE     => Maho_Ai_Model_Platform_Symfony::createForGoogle($storeId),
+            Maho_Ai_Model_Platform::MISTRAL    => Maho_Ai_Model_Platform_Symfony::createForMistral($storeId),
+            Maho_Ai_Model_Platform::OPENROUTER => Maho_Ai_Model_Platform_Symfony::createForOpenRouter($storeId),
+            Maho_Ai_Model_Platform::OLLAMA     => Maho_Ai_Model_Platform_Symfony::createForOllama($storeId),
+            Maho_Ai_Model_Platform::GENERIC    => Maho_Ai_Model_Platform_Symfony::createForGeneric($storeId),
+        };
+    }
+
+    // -------------------------------------------------------------------------
+    // Registry path - community providers register via global/ai/providers/{code}
+    // -------------------------------------------------------------------------
+
     /**
-     * Create a provider from the config XML registry.
-     *
-     * Looks up global/ai/providers/{$code} for factory_class or factory_method.
-     *
      * @throws Mage_Core_Exception
      */
     private function createFromRegistry(
@@ -300,32 +185,25 @@ class Maho_Ai_Model_Platform_Factory
             throw new Mage_Core_Exception("Unknown AI platform: {$platformCode}");
         }
 
-        // Verify capability
         $capabilities = array_map('trim', explode(',', (string) ($config->capabilities ?? '')));
         if (!in_array($capability, $capabilities, true)) {
             throw new Mage_Core_Exception("Platform '{$platformCode}' does not support {$capability}.");
         }
 
-        // Built-in providers can use factory_method to call existing private methods
-        $factoryMethod = (string) ($config->factory_method ?? '');
-        if ($factoryMethod && method_exists($this, $factoryMethod)) {
-            $provider = $this->$factoryMethod($storeId);
-        }
-        // Community providers use factory_class
-        elseif ($config->factory_class) {
-            $factoryClass = (string) $config->factory_class;
-            $factory = new $factoryClass();
-            if (!($factory instanceof Maho_Ai_Model_Platform_ProviderFactoryInterface)) {
-                throw new Mage_Core_Exception(
-                    "Factory class '{$factoryClass}' must implement ProviderFactoryInterface.",
-                );
-            }
-            $provider = $factory->create($storeId);
-        } else {
+        if (!$config->factory_class) {
             throw new Mage_Core_Exception(
-                "Provider '{$platformCode}' has no factory_method or factory_class configured.",
+                "Provider '{$platformCode}' has no factory_class configured.",
             );
         }
+
+        $factoryClass = (string) $config->factory_class;
+        $factory = new $factoryClass();
+        if (!($factory instanceof Maho_Ai_Model_Platform_ProviderFactoryInterface)) {
+            throw new Mage_Core_Exception(
+                "Factory class '{$factoryClass}' must implement ProviderFactoryInterface.",
+            );
+        }
+        $provider = $factory->create($storeId);
 
         if (!($provider instanceof $requiredInterface)) {
             $shortInterface = basename(str_replace('_', '/', $requiredInterface));

@@ -13,7 +13,14 @@
     ],
     "require": {
         "php": ">=8.3",
-        "mahocommerce/maho": "^26.3"
+        "mahocommerce/maho": "^26.3",
+        "symfony/ai-platform": "^0.7",
+        "symfony/ai-open-ai-platform": "^0.7",
+        "symfony/ai-anthropic-platform": "^0.7",
+        "symfony/ai-gemini-platform": "^0.7",
+        "symfony/ai-mistral-platform": "^0.7",
+        "symfony/ai-ollama-platform": "^0.7",
+        "symfony/ai-open-router-platform": "^0.7"
     },
     "autoload": {
         "psr-0": {
