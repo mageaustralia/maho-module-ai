@@ -88,7 +88,10 @@ class Maho_Ai_Model_Usage extends Mage_Core_Model_Abstract
             ->addFieldToFilter('period_date', $periodDate)
             ->setPageSize(1)
             ->getFirstItem();
-        return ($row && $row->getId()) ? $row : null;
+        // getFirstItem() is declared to return Maho\DataObject (the collection's
+        // parent type). It actually returns whatever the collection's row class is,
+        // so we narrow with instanceof to satisfy the self|null return.
+        return ($row instanceof self && $row->getId()) ? $row : null;
     }
 
     private function incrementCounters(

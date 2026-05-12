@@ -76,7 +76,9 @@ if (!$connection->isTableExists($this->getTable('ai/vector'))) {
         ], 'Created At')
         ->addColumn('updated_at', Maho\Db\Ddl\Table::TYPE_TIMESTAMP, null, [
             'nullable' => false,
-            'default'  => Maho\Db\Ddl\Table::TIMESTAMP_INIT_UPDATE,
+            // Model _beforeSave() keeps updated_at current; the
+            // on-update auto-bump is cross-engine unsafe.
+            'default'  => Maho\Db\Ddl\Table::TIMESTAMP_INIT,
         ], 'Updated At')
         ->addIndex(
             $this->getIdxName('ai/vector', ['entity_type', 'entity_id', 'store_id'], Varien_Db_Adapter_Interface::INDEX_TYPE_UNIQUE),

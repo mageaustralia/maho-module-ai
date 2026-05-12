@@ -64,11 +64,9 @@ class Maho_Ai_Model_Platform_Factory
             ?: Maho_Ai_Model_Platform::OPENAI;
 
         if ($this->isBuiltIn($platformCode)) {
-            $provider = $this->createSymfonyShim($platformCode, $storeId, embedModelGroup: true);
-            if (!$provider instanceof Maho_Ai_Model_Platform_EmbedProviderInterface) {
-                throw new Mage_Core_Exception("Platform '{$platformCode}' does not support embeddings.");
-            }
-            return $provider;
+            // Symfony shim implements all three interfaces; no further
+            // capability check needed for built-in providers.
+            return $this->createSymfonyShim($platformCode, $storeId);
         }
 
         $provider = $this->createFromRegistry(
@@ -91,11 +89,10 @@ class Maho_Ai_Model_Platform_Factory
             ?: Maho_Ai_Model_Platform::OPENAI;
 
         if ($this->isBuiltIn($platformCode)) {
-            $provider = $this->createSymfonyShim($platformCode, $storeId);
-            if (!$provider instanceof Maho_Ai_Model_Platform_ImageProviderInterface) {
-                throw new Mage_Core_Exception("Platform '{$platformCode}' does not support image generation.");
-            }
-            return $provider;
+            // Symfony shim implements all three interfaces; the actual
+            // image-capability check happens inside the shim when it tries
+            // to invoke a model that the underlying bridge doesn't support.
+            return $this->createSymfonyShim($platformCode, $storeId);
         }
 
         $provider = $this->createFromRegistry(
@@ -147,14 +144,8 @@ class Maho_Ai_Model_Platform_Factory
         ], true);
     }
 
-    private function createSymfonyShim(string $platformCode, ?int $storeId, bool $embedModelGroup = false): Maho_Ai_Model_Platform_Symfony
+    private function createSymfonyShim(string $platformCode, ?int $storeId): Maho_Ai_Model_Platform_Symfony
     {
-        // $embedModelGroup is reserved for future per-capability model
-        // selection. The Symfony shim's static factories already read
-        // embed/image model config paths so the same instance serves
-        // all three capabilities for a given platform.
-        unset($embedModelGroup);
-
         return match ($platformCode) {
             Maho_Ai_Model_Platform::OPENAI     => Maho_Ai_Model_Platform_Symfony::createForOpenAi($storeId),
             Maho_Ai_Model_Platform::ANTHROPIC  => Maho_Ai_Model_Platform_Symfony::createForAnthropic($storeId),
@@ -163,6 +154,9 @@ class Maho_Ai_Model_Platform_Factory
             Maho_Ai_Model_Platform::OPENROUTER => Maho_Ai_Model_Platform_Symfony::createForOpenRouter($storeId),
             Maho_Ai_Model_Platform::OLLAMA     => Maho_Ai_Model_Platform_Symfony::createForOllama($storeId),
             Maho_Ai_Model_Platform::GENERIC    => Maho_Ai_Model_Platform_Symfony::createForGeneric($storeId),
+            // Unreachable in practice (isBuiltIn() gates entry into this
+            // method), but keeps PHPStan satisfied that the match is total.
+            default => throw new Mage_Core_Exception("Platform '{$platformCode}' is not a built-in Symfony-shim platform."),
         };
     }
 

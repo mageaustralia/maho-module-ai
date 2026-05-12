@@ -23,7 +23,14 @@ declare(strict_types=1);
  * ceiling for long-form completions, so widening them at the same time.
  */
 
-/** @var Mage_Core_Model_Resource_Setup $installer */
+/**
+ * Maho's setup scripts run inside Mage_Core_Model_Resource_Setup::_modifyResourceDb()
+ * with $this bound to the setup instance - PHPStan can't see that binding
+ * (the script file isn't a method body) but the runtime context is solid.
+ *
+ * @var Mage_Core_Model_Resource_Setup $installer
+ */
+/** @phpstan-ignore variable.undefined */
 $installer = $this;
 $installer->startSetup();
 

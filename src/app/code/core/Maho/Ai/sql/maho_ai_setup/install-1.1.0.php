@@ -229,7 +229,11 @@ $table = $connection->newTable($this->getTable('ai/vector'))
     ], 'Created At')
     ->addColumn('updated_at', Maho\Db\Ddl\Table::TYPE_TIMESTAMP, null, [
         'nullable' => false,
-        'default'  => Maho\Db\Ddl\Table::TIMESTAMP_INIT_UPDATE,
+        // Model has a _beforeSave() that sets updated_at on every save -
+        // the on-update auto-bump is cross-engine unsafe (PgSQL/SQLite
+        // downgrade silently). TIMESTAMP_INIT seeds the column at create
+        // time; _beforeSave() keeps it current on update.
+        'default'  => Maho\Db\Ddl\Table::TIMESTAMP_INIT,
     ], 'Updated At')
     ->addIndex(
         $this->getIdxName('ai/vector', ['entity_type', 'entity_id', 'store_id'], Varien_Db_Adapter_Interface::INDEX_TYPE_UNIQUE),
