@@ -152,18 +152,12 @@ class Maho_Ai_Block_Adminhtml_Task_Grid extends Mage_Adminhtml_Block_Widget_Grid
 
     public function decorateStatus(string $value, Maho_Ai_Model_Task $row): string
     {
-        $colors = [
-            Maho_Ai_Model_Task::STATUS_PENDING    => '#7b8a97',
-            Maho_Ai_Model_Task::STATUS_PROCESSING => '#5577aa',
-            Maho_Ai_Model_Task::STATUS_COMPLETE   => '#3d8a3d',
-            Maho_Ai_Model_Task::STATUS_FAILED     => '#c0392b',
-            Maho_Ai_Model_Task::STATUS_CANCELLED  => '#999',
-        ];
-        $status = $row->getData('status');
-        $color  = $colors[$status] ?? '#333';
+        // Status colour classes live in skin/adminhtml/.../css/maho/ai.css
+        // (.ai-status--pending / processing / complete / failed / cancelled).
+        $status = (string) $row->getData('status');
         return sprintf(
-            '<span style="color:%s;font-weight:bold">%s</span>',
-            $color,
+            '<span class="ai-status ai-status--%s">%s</span>',
+            $this->escapeHtml($status),
             $this->escapeHtml($value),
         );
     }

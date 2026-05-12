@@ -10,27 +10,63 @@
  */
 -->
 <layout>
+    <!--
+      Update handles for the module's own pages: load ai.css for the
+      status colour classes the Task grid uses, and ai.js for the
+      data-attribute event listeners (confirm dialogs, fetch-models
+      button on system config dropdowns).
+    -->
     <adminhtml_ai_tasks>
+        <reference name="head">
+            <action method="addItem"><type>skin_css</type><name>maho/ai.css</name></action>
+            <action method="addItem"><type>skin_js</type><name>maho/ai.js</name></action>
+        </reference>
         <reference name="content">
             <block type="ai/adminhtml_task" name="ai.tasks"/>
         </reference>
     </adminhtml_ai_tasks>
 
     <adminhtml_ai_view>
+        <reference name="head">
+            <action method="addItem"><type>skin_css</type><name>maho/ai.css</name></action>
+            <action method="addItem"><type>skin_js</type><name>maho/ai.js</name></action>
+        </reference>
         <reference name="content">
             <block type="ai/adminhtml_task_view" name="ai.task.view" template="maho/ai/task/view.phtml"/>
         </reference>
     </adminhtml_ai_view>
 
     <adminhtml_ai_usage>
+        <reference name="head">
+            <action method="addItem"><type>skin_css</type><name>maho/ai.css</name></action>
+            <action method="addItem"><type>skin_js</type><name>maho/ai.js</name></action>
+        </reference>
         <reference name="content">
             <block type="ai/adminhtml_usage" name="ai.usage"/>
         </reference>
     </adminhtml_ai_usage>
 
     <adminhtml_ai_reindex>
+        <reference name="head">
+            <action method="addItem"><type>skin_css</type><name>maho/ai.css</name></action>
+            <action method="addItem"><type>skin_js</type><name>maho/ai.js</name></action>
+        </reference>
         <reference name="content">
             <block type="ai/adminhtml_reindex" name="ai.reindex" template="maho/ai/reindex.phtml"/>
         </reference>
     </adminhtml_ai_reindex>
+
+    <!--
+      System Configuration page (where ModelSelect renders) needs ai.js
+      so the [data-maho-ai-fetch-models] buttons work. Hooks the global
+      system_config_edit handle so the asset loads regardless of which
+      section is being viewed - cheap, lets the same button work for
+      any future ModelSelect placement.
+    -->
+    <adminhtml_system_config_edit>
+        <reference name="head">
+            <action method="addItem"><type>skin_css</type><name>maho/ai.css</name></action>
+            <action method="addItem"><type>skin_js</type><name>maho/ai.js</name></action>
+        </reference>
+    </adminhtml_system_config_edit>
 </layout>

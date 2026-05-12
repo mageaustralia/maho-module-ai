@@ -37,77 +37,18 @@ class Maho_Ai_Block_Adminhtml_System_Config_Form_Field_ModelSelect extends Mage_
             return $html;
         }
 
-        $fetchUrl = $this->escapeHtml(
-            $this->getUrl('*/ai/fetchModels', ['provider' => $provider, 'capability' => $capability]),
-        );
-        $escapedId = $this->escapeHtml($elementId);
-
-        // Only inject the JS function definition once per page
-        $jsInit = '';
-        if (!$this->getData('_model_select_js_injected')) {
-            $this->setData('_model_select_js_injected', true);
-            $jsInit = <<<'JS'
-<script>
-function mahoAiFetchModels(url, selectId, btn) {
-    var keyMatch = window.location.href.match(/\/key\/([a-f0-9]+)\//);
-    if (keyMatch) {
-        url = url.replace(/\/key\/[a-f0-9]+\//, '/key/' + keyMatch[1] + '/');
-    }
-    var orig = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = 'Fetching\u2026';
-    fetch(url, {headers: {'X-Requested-With': 'XMLHttpRequest'}})
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            if (data.error) {
-                alert('Error: ' + data.error);
-                return;
-            }
-            var el = document.getElementById(selectId);
-            if (!el) return;
-            var current = el.value;
-            // If the element is an input (text field), replace it with a select
-            if (el.tagName === 'INPUT') {
-                var sel = document.createElement('select');
-                sel.id = el.id;
-                sel.name = el.name;
-                sel.className = el.className;
-                sel.style.cssText = el.style.cssText;
-                el.parentNode.replaceChild(sel, el);
-                el = sel;
-            }
-            el.innerHTML = '';
-            data.models.forEach(function(m) {
-                var opt = document.createElement('option');
-                opt.value = m.value;
-                opt.text = m.label;
-                if (m.value === current) { opt.selected = true; }
-                el.appendChild(opt);
-            });
-            // If no option matched the previous value, select it anyway
-            if (current && !el.querySelector('option[selected]')) {
-                el.value = current;
-            }
-        })
-        .catch(function(e) { alert('Error: ' + e.message); })
-        .finally(function() { btn.disabled = false; btn.innerHTML = orig; });
-}
-</script>
-JS;
-        }
-
+        // Behaviour for the button lives in skin/adminhtml/.../js/maho/ai.js
+        // and listens for [data-maho-ai-fetch-models] - keeps this PHP class
+        // free of inline JS. Layout file adds ai.js + ai.css to the system
+        // configuration page so they're present here.
         $btn = sprintf(
-            '<button type="button" class="scalable" onclick="mahoAiFetchModels(\'%s\', \'%s\', this)" style="white-space:nowrap;margin-left:8px"><span>%s</span></button>',
-            $fetchUrl,
-            $escapedId,
+            '<button type="button" class="scalable" data-maho-ai-fetch-models'
+            . ' data-url="%s" data-target="%s"><span>%s</span></button>',
+            $this->escapeHtml($this->getUrl('*/ai/fetchModels', ['provider' => $provider, 'capability' => $capability])),
+            $this->escapeHtml($elementId),
             $this->escapeHtml(Mage::helper('ai')->__('Update Models')),
         );
 
-        // Wrap select + button in a flex row so the button sits beside the dropdown
-        return $jsInit
-            . '<div style="display:flex;align-items:center;gap:0">'
-            . $html
-            . $btn
-            . '</div>';
+        return '<div class="ai-model-select-row">' . $html . $btn . '</div>';
     }
 }
