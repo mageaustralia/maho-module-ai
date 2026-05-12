@@ -45,11 +45,12 @@ $table      = $installer->getTable('ai/task');
 // widening is a no-op there. Worse, asking Maho's PG adapter to
 // "modify a TEXT column to length 16M" translates to
 // ALTER COLUMN ... TYPE VARCHAR(16777216), which exceeds PG's 10MB
-// varchar ceiling and errors. Gate the modifyColumn calls to MySQL only.
-$driver  = (string) $connection->getDriverName();
-$isMysql = str_contains(strtolower($driver), 'mysql');
-
-if ($isMysql) {
+// varchar ceiling and errors. Gate the modifyColumn calls to MySQL.
+//
+// AdapterInterface exposes no public is-mysql / is-pgsql discriminator
+// (getDriverName() is protected), so the cleanest stable test is an
+// instanceof against the concrete MySQL adapter class.
+if ($connection instanceof \Maho\Db\Adapter\Pdo\Mysql) {
     $connection->modifyColumn($table, 'context', [
         'type'     => \Maho\Db\Ddl\Table::TYPE_TEXT,
         'length'   => '16M',
