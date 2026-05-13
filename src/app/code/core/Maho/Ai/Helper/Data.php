@@ -73,7 +73,11 @@ class Maho_Ai_Helper_Data extends Mage_Core_Helper_Abstract
 
         // Create provider and call
         $provider = $this->getFactory()->create($platform, $storeId);
-        $response = $provider->complete($messages, $options);
+        try {
+            $response = $provider->complete($messages, $options);
+        } catch (\Symfony\AI\Platform\Exception\ExceptionInterface $e) {
+            throw $this->translateProviderException($e, $provider->getPlatformCode());
+        }
 
         // Sanitize output
         $isHtml = (bool) ($options['is_html'] ?? false);
@@ -180,7 +184,11 @@ class Maho_Ai_Helper_Data extends Mage_Core_Helper_Abstract
         }
 
         $provider = $this->getFactory()->createEmbed($platform, $storeId);
-        $vectors  = $provider->embed($text, $options);
+        try {
+            $vectors = $provider->embed($text, $options);
+        } catch (\Symfony\AI\Platform\Exception\ExceptionInterface $e) {
+            throw $this->translateProviderException($e, $provider->getEmbedPlatformCode());
+        }
 
         $this->logRequest(
             consumer: $consumer,
@@ -284,7 +292,11 @@ class Maho_Ai_Helper_Data extends Mage_Core_Helper_Abstract
         }
 
         $provider = $this->getFactory()->createImage($platform, $storeId);
-        $url      = $provider->generateImage($prompt, $options);
+        try {
+            $url = $provider->generateImage($prompt, $options);
+        } catch (\Symfony\AI\Platform\Exception\ExceptionInterface $e) {
+            throw $this->translateProviderException($e, $provider->getImagePlatformCode());
+        }
 
         $this->logRequest(
             consumer: $consumer,
@@ -368,6 +380,41 @@ class Maho_Ai_Helper_Data extends Mage_Core_Helper_Abstract
     private function getFactory(): Maho_Ai_Model_Platform_Factory
     {
         return Mage::getSingleton('ai/platform_factory');
+    }
+
+    /**
+     * Turn a Symfony AI Platform exception into a user-friendly
+     * Mage_Core_Exception. The provider's raw message is preserved (it is
+     * usually the actionable bit, e.g. "max_output_tokens: Extra inputs are
+     * not permitted") and the original throwable is logged so the full
+     * stack remains in the exception log for debugging.
+     */
+    private function translateProviderException(
+        \Symfony\AI\Platform\Exception\ExceptionInterface $e,
+        string $platformCode,
+    ): Mage_Core_Exception {
+        Mage::logException($e);
+
+        $prefix = match (true) {
+            $e instanceof \Symfony\AI\Platform\Exception\AuthenticationException
+                => 'Authentication failed',
+            $e instanceof \Symfony\AI\Platform\Exception\RateLimitExceededException
+                => 'Rate limit exceeded',
+            $e instanceof \Symfony\AI\Platform\Exception\ContentFilterException
+                => 'Request blocked by content filter',
+            $e instanceof \Symfony\AI\Platform\Exception\ModelNotFoundException
+                => 'Model not found',
+            $e instanceof \Symfony\AI\Platform\Exception\ExceedContextSizeException
+                => 'Prompt exceeds the model context size',
+            default => 'AI request failed',
+        };
+
+        return new Mage_Core_Exception(sprintf(
+            '%s (%s): %s',
+            $prefix,
+            $platformCode,
+            $e->getMessage(),
+        ));
     }
 
     private function getInputValidator(): Maho_Ai_Model_Safety_InputValidator

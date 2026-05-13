@@ -413,11 +413,13 @@ class Maho_Ai_Model_Platform_Symfony implements
             $out['temperature'] = $options['temperature'];
         }
         if (isset($options['max_tokens'])) {
-            // OpenAI Responses API uses max_output_tokens; legacy max_tokens
-            // is also accepted on some bridges. Symfony forwards as-is so
-            // we send both for safety.
-            $out['max_output_tokens'] = $options['max_tokens'];
+            // Every Symfony AI bridge except OpenAI Responses accepts
+            // max_tokens; Anthropic's strict-validation bridge rejects
+            // unknown keys, so max_output_tokens must only go to OpenAI.
             $out['max_tokens'] = $options['max_tokens'];
+            if ($this->platformCode === Maho_Ai_Model_Platform::OPENAI) {
+                $out['max_output_tokens'] = $options['max_tokens'];
+            }
         }
         return $out;
     }
